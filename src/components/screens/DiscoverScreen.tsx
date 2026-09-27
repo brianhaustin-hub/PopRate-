@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { formatNumber } from '@/lib/utils';
-import { Search, Flame, TrendingUp, Users, Palette, Trophy, Star } from 'lucide-react';
+import { Search, Flame, TrendingUp, Users, Palette, Trophy, Star, ArrowUpRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { DiscoverTab } from '@/types';
 
 export function DiscoverScreen() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<DiscoverTab>('trending');
 
   const renderContent = () => {
@@ -23,7 +25,7 @@ export function DiscoverScreen() {
               <h2 className="text-xl font-bold text-white">Trending Now</h2>
             </div>
             {posts.slice(0, 5).map((post, i) => (
-              <div key={post.id} className="flex gap-3 p-3 bg-surface-900 rounded-xl border border-white/5 mb-2 hover:border-white/10 transition-colors cursor-pointer">
+              <button key={post.id} onClick={() => router.push(`/post/${post.id}`)} className="w-full text-left flex gap-3 p-3 bg-surface-900 rounded-xl border border-white/5 mb-2 hover:border-white/10 transition-colors">
                 <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
                   <img src={post.image} alt="" className="w-full h-full object-cover" />
                 </div>
@@ -50,7 +52,7 @@ export function DiscoverScreen() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {posts.slice(0, 6).map((post, i) => (
-                <div key={post.id} className="overflow-hidden rounded-xl bg-surface-900 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                <button key={post.id} onClick={() => router.push(`/post/${post.id}`)} className="w-full text-left overflow-hidden rounded-xl bg-surface-900 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
                   <div className="aspect-square relative">
                     <img src={post.image} alt="" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -59,7 +61,7 @@ export function DiscoverScreen() {
                       <p className="text-pop-500 text-xs font-bold">★ {post.rating}</p>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -74,7 +76,7 @@ export function DiscoverScreen() {
             </div>
             <div className="space-y-3">
               {users.slice(0, 6).map((user, i) => (
-                <div key={user.id} className="flex items-center gap-3 p-3 bg-surface-900 rounded-xl border border-white/5 hover:border-white/10 cursor-pointer">
+                <button key={user.id} onClick={() => router.push(`/user/${user.username}`)} className="w-full text-left flex items-center gap-3 p-3 bg-surface-900 rounded-xl border border-white/5 hover:border-white/10 cursor-pointer">
                   <Avatar src={user.avatar} size="lg" showBadge />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-white">{user.displayName}</p>
@@ -85,7 +87,7 @@ export function DiscoverScreen() {
                     <p className="text-[10px] text-white/30">{user.ratingsCount.toLocaleString()} ratings</p>
                   </div>
                   <Button variant="secondary" size="sm">Follow</Button>
-                </div>
+                </button>
               ))}
             </div>
           </div>
