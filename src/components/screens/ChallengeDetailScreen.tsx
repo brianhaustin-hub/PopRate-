@@ -2,15 +2,18 @@
 
 import { useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, Flag, Heart, MessageCircle, Share2, Trophy, Users, Zap } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 type Mode = 'live' | 'result';
 
 export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const challengeId = params?.id || 'c1';
   const [selected, setSelected] = useState<'a' | 'b' | null>(null);
   const [voted, setVoted] = useState(false);
   const [liked, setLiked] = useState(false);
+  const [shared, setShared] = useState(false);
 
   const isResult = mode === 'result';
   const votesA = isResult ? 642 : 418;
@@ -32,9 +35,9 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
         </button>
         <div className="text-center">
           <p className="text-[10px] font-black uppercase tracking-[.18em] text-pop-400">{isResult ? 'FINAL RESULT' : 'LIVE ARENA'}</p>
-          <p className="text-xs font-semibold text-white/45">Challenge #PR-2048</p>
+          <p className="text-xs font-semibold text-white/45">Challenge #{challengeId.toUpperCase()}</p>
         </div>
-        <button className="grid h-10 w-10 place-items-center rounded-full bg-white/[.06]"><Share2 size={17} /></button>
+        <button onClick={()=>{if(navigator.clipboard) navigator.clipboard.writeText(window.location.href);setShared(true);setTimeout(()=>setShared(false),1400)}} className="grid h-10 w-10 place-items-center rounded-full bg-white/[.06]">{shared?<Check size={17}/>:<Share2 size={17}/>}</button>
       </header>
 
       <main className="mx-auto max-w-xl px-4 py-5">
@@ -91,7 +94,11 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
           <button className="flex items-center gap-2 text-sm font-semibold text-white/50"><Flag size={18} /> Report</button>
         </div>
 
-        {isResult && (
+        {isResult && votesA === votesB && (
+          <div className="mt-5 rounded-[1.5rem] border border-amber-400/20 bg-amber-400/5 p-5"><div className="flex items-center gap-3"><Trophy className="text-amber-300" size={22}/><div><p className="text-xs font-black uppercase tracking-[.15em] text-amber-300">TIE</p><p className="mt-1 text-xl font-black">The arena ended level.</p></div></div><p className="mt-3 text-sm leading-6 text-white/45">Both sides received the same number of votes. No winner is declared.</p></div>
+        )}
+
+        {isResult && votesA !== votesB && (
           <div className="mt-5 rounded-[1.5rem] border border-pop-500/20 bg-gradient-to-br from-pop-500/10 to-transparent p-5">
             <div className="flex items-center gap-3"><Trophy className="text-pop-400" size={22} /><div><p className="text-xs font-black uppercase tracking-[.15em] text-pop-400">WINNER</p><p className="mt-1 text-xl font-black">{votesA > votesB ? 'Alex Morgan' : 'Your side'} takes the arena.</p></div></div>
             <p className="mt-3 text-sm leading-6 text-white/45">The challenge is closed. Results are final and the vote split is now public.</p>
