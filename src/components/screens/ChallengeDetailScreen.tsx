@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, Heart, MessageCircle, MoreHorizontal, Share2, ShieldAlert, Trophy, UserX, Users, Zap } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
+import { getChallengeWorkflow } from '@/data/challengeWorkflow';
 
 type Mode = 'live' | 'result';
 
@@ -10,6 +11,7 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const challengeId = params?.id || 'c1';
+  const workflow = getChallengeWorkflow(challengeId);
   const [selected, setSelected] = useState<'a' | 'b' | null>(null);
   const [voted, setVoted] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -22,8 +24,8 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const [blocked, setBlocked] = useState(false);
 
   const isResult = mode === 'result';
-  const votesA = isResult ? 642 : 418;
-  const votesB = isResult ? 538 : 392;
+  const votesA = workflow?.votesA ?? (isResult ? 642 : 418);
+  const votesB = workflow?.votesB ?? (isResult ? 538 : 392);
   const total = votesA + votesB;
   const percentA = Math.round((votesA / total) * 100);
   const percentB = 100 - percentA;
@@ -32,7 +34,7 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
 
   const submitVote = () => {
     if (!selected || voted || isResult) return;
-    setVoted(true);
+    if (workflow) { workflow.votesA = selected === 'a' ? workflow.votesA + 1 : workflow.votesA; workflow.votesB = selected === 'b' ? workflow.votesB + 1 : workflow.votesB; workflow.votesA + workflow.votesB; } setVoted(true);
   };
 
   return (
@@ -52,7 +54,7 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-pop-500 to-neon-500 text-xs font-black">A</div>
-            <div><p className="text-sm font-bold">Alex Morgan</p><p className="text-xs text-white/40">@alexmorgan · Style</p></div>
+            <div><p className="text-sm font-bold">{workflow?.creator.name || 'Alex Morgan'}</p><p className="text-xs text-white/40">@{workflow?.creator.username || 'alexmorgan'} · {workflow?.category || 'Style'}</p></div>
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-white/[.05] px-3 py-1.5 text-[11px] font-bold text-white/55">
             {isResult ? <Trophy size={13} className="text-pop-400" /> : <Clock3 size={13} className="text-pop-400" />}
@@ -61,13 +63,13 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
         </div>
 
         <section className="mt-6">
-          <h1 className="text-[2rem] font-black leading-[1.05] tracking-[-.045em]">Which look wins the night?</h1>
+          <h1 className="text-[2rem] font-black leading-[1.05] tracking-[-.045em]">{workflow?.title || 'Which look wins the night?'}</h1>
           <p className="mt-2 text-sm leading-6 text-white/45">Pick one side. Every vote moves the arena.</p>
         </section>
 
         <section className="mt-6 grid grid-cols-2 gap-2">
-          <VoteSide label="ALEX" image="https://picsum.photos/seed/poprate-live-a/700/900" percent={percentA} votes={votesA} selected={selected === 'a'} disabled={voted || isResult} winner={isResult && votesA > votesB} onSelect={() => setSelected('a')} />
-          <VoteSide label="YOU" image="https://picsum.photos/seed/poprate-live-b/700/900" percent={percentB} votes={votesB} selected={selected === 'b'} disabled={voted || isResult} winner={isResult && votesB > votesA} onSelect={() => setSelected('b')} />
+          <VoteSide label="ALEX" image="{workflow?.creatorSide || 'https://picsum.photos/seed/poprate-live-a/700/900'}" percent={percentA} votes={votesA} selected={selected === 'a'} disabled={voted || isResult} winner={isResult && votesA > votesB} onSelect={() => setSelected('a')} />
+          <VoteSide label={workflow?.opponent?.name ? workflow.opponent.name.toUpperCase() : "B"} image="{workflow?.opponentSide || 'https://picsum.photos/seed/poprate-live-b/700/900'}" percent={percentB} votes={votesB} selected={selected === 'b'} disabled={voted || isResult} winner={isResult && votesB > votesA} onSelect={() => setSelected('b')} />
         </section>
 
         {!isResult && !voted && (
