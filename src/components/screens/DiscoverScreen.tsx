@@ -14,6 +14,7 @@ import { DiscoverTab } from '@/types';
 export function DiscoverScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<DiscoverTab>('trending');
+  const [search, setSearch] = useState('');
 
   const renderContent = () => {
     switch (activeTab) {
@@ -158,7 +159,12 @@ export function DiscoverScreen() {
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search people, posts, tags..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && search.trim()) router.push('/search?q=' + encodeURIComponent(search.trim()));
+              }}
               className="w-full bg-surface-800 text-white pl-10 pr-4 py-2.5 rounded-full text-sm border border-white/5 focus:border-pop-500/50 focus:outline-none"
             />
           </div>
