@@ -119,7 +119,7 @@ export function PublicProfileScreen({ user }: { user: User }) {
               {userPosts.map((post) => (
                 <button
                   key={post.id}
-                  onClick={() => router.push('/discover')}
+                  onClick={() => router.push('/post/' + post.id)}
                   className="aspect-square rounded-xl overflow-hidden bg-surface-900 relative group"
                 >
                   <img src={post.image} alt={post.caption} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
