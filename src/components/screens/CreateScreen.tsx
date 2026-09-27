@@ -1,175 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Camera, Image, Video, Tag, Sparkles, Trophy, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Check, ChevronRight, ImagePlus, Link2, Search, Send, ShieldCheck, Sparkles, Users, UserRound } from 'lucide-react';
 
-export function CreateScreen() {
-  const [activeCreate, setActiveCreate] = useState<'post' | 'battle' | 'challenge' | null>(null);
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [caption, setCaption] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [category, setCategory] = useState('');
+type Mode='direct'|'open'|null;
+const categories=['Fashion','Photography','Music','Gaming','Sports','Lifestyle','Art','Food'];
 
-  const categories = ['Photography', 'Digital Art', 'Portrait', 'Abstract', '3D Art', 'Nature', 'Fashion', 'Lifestyle'];
+export function CreateScreen(){
+  const router=useRouter();
+  const [step,setStep]=useState(1); const [mode,setMode]=useState<Mode>(null);
+  const [title,setTitle]=useState(''); const [category,setCategory]=useState('Fashion');
+  const [media,setMedia]=useState('https://picsum.photos/seed/my-side/900/1100');
+  const [opponent,setOpponent]=useState(''); const [published,setPublished]=useState(false);
+  const canContinue=step===1?title.trim().length>=4:step===2?!!media:!!mode&&(mode==='open'||opponent.length>0);
 
-  const handleImageSelect = () => {
-    const newImage = `https://picsum.photos/seed/create${Date.now()}/800/1200`;
-    setSelectedImages((prev) => [...prev, newImage]);
-  };
+  if(published)return <div className="flex h-full items-center justify-center bg-[radial-gradient(circle_at_top,#301238,#09090b_55%)] px-6"><div className="w-full max-w-sm text-center"><div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-pop-500/15 text-pop-300"><Check size={36}/></div><p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-pop-300">{mode==='open'?'Challenge created':'Invitation sent'}</p><h1 className="mt-2 text-3xl font-black text-white">{mode==='open'?'Your arena is ready.':'Opponent invited.'}</h1><p className="mt-3 text-sm leading-6 text-white/50">{mode==='open'?'Share your link. The first person to join becomes your opponent.':'@'+opponent+' will add their side before the Challenge goes live.'}</p><div className="mt-7 space-y-3"><button onClick={()=>router.push('/challenges')} className="w-full rounded-2xl bg-white py-3.5 text-sm font-black text-black">View Challenge</button><button onClick={()=>router.push('/')} className="w-full rounded-2xl bg-white/5 py-3.5 text-sm font-bold text-white">Back home</button></div></div></div>;
 
-  const handleAddTag = (tag: string) => {
-    if (!tags.includes(tag) && tag.length > 0) {
-      setTags((prev) => [...prev, tag]);
-    }
-  };
-
-  return (
-    <div className="h-full flex flex-col">
-      <div className="sticky top-0 z-10 bg-surface-950/95 backdrop-blur-xl px-4 py-3">
-        <h1 className="text-2xl font-bold text-white">Create</h1>
-        <p className="text-xs text-white/40">Share your vision</p>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 pb-24">
-        {!activeCreate ? (
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <button
-              onClick={() => setActiveCreate('post')}
-              className="flex flex-col items-center gap-2 p-4 bg-surface-900 rounded-2xl border border-white/5 hover:border-pop-500/30"
-            >
-              <div className="w-14 h-14 rounded-xl bg-pop-500/20 flex items-center justify-center">
-                <Image size={28} className="text-pop-500" />
-              </div>
-              <span className="text-sm font-semibold text-white">Post</span>
-              <span className="text-xs text-white/40">Share a photo</span>
-            </button>
-
-            <button
-              onClick={() => setActiveCreate('battle')}
-              className="flex flex-col items-center gap-2 p-4 bg-surface-900 rounded-2xl border border-white/5 hover:border-neon-500/30"
-            >
-              <div className="w-14 h-14 rounded-xl bg-neon-500/20 flex items-center justify-center">
-                <Trophy size={28} className="text-neon-500" />
-              </div>
-              <span className="text-sm font-semibold text-white">Rate Battle</span>
-              <span className="text-xs text-white/40">Create a battle</span>
-            </button>
-
-            <button
-              onClick={() => setActiveCreate('challenge')}
-              className="flex flex-col items-center gap-2 p-4 bg-surface-900 rounded-2xl border border-white/5 hover:border-yellow-500/30"
-            >
-              <div className="w-14 h-14 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-                <Sparkles size={28} className="text-yellow-500" />
-              </div>
-              <span className="text-sm font-semibold text-white">Challenge</span>
-              <span className="text-xs text-white/40">Start a challenge</span>
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-4 mt-4">
-            <button
-              onClick={() => setActiveCreate(null)}
-              className="flex items-center gap-2 text-sm text-white/60"
-            >
-              <Plus size={16} /> Back
-            </button>
-
-            {/* Image Selection */}
-            <div className="bg-surface-900 rounded-2xl p-4 border border-white/5">
-              <h3 className="font-semibold text-white mb-3">Media</h3>
-              {selectedImages.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2">
-                  {selectedImages.map((img, i) => (
-                    <div key={i} className="aspect-square rounded-xl overflow-hidden relative">
-                      <img src={img} alt="" className="w-full h-full object-cover" />
-                      <button className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
-                        <span className="text-white text-xs">✕</span>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={handleImageSelect}
-                    className="aspect-square rounded-xl bg-surface-800 border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-2"
-                  >
-                    <Image size={24} className="text-white/30" />
-                    <span className="text-xs text-white/30">Photo</span>
-                  </button>
-                  <button
-                    onClick={() => {}}
-                    className="aspect-square rounded-xl bg-surface-800 border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-2"
-                  >
-                    <Video size={24} className="text-white/30" />
-                    <span className="text-xs text-white/30">Video</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Caption */}
-            <div className="bg-surface-900 rounded-2xl p-4 border border-white/5">
-              <h3 className="font-semibold text-white mb-3">Caption</h3>
-              <textarea
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                placeholder="Write a caption..."
-                className="w-full bg-surface-800 text-white rounded-xl p-4 text-sm border border-white/5 focus:border-pop-500/50 focus:outline-none resize-none h-32"
-              />
-            </div>
-
-            {/* Category */}
-            <div className="bg-surface-900 rounded-2xl p-4 border border-white/5">
-              <h3 className="font-semibold text-white mb-3">Category</h3>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setCategory(cat)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                      category === cat ? 'bg-pop-500 text-white' : 'bg-surface-800 text-white/60'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="bg-surface-900 rounded-2xl p-4 border border-white/5">
-              <h3 className="font-semibold text-white mb-3">Tags</h3>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {tags.map((tag, i) => (
-                  <Badge key={i} variant="accent" className="cursor-pointer" onClick={() => setTags(tags.filter((_, j) => j !== i))}>
-                    {tag} ✕
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                {['#photography', '#art', '#design', '#creative'].map((tag) => (
-                  <button
-                    key={tag}
-                    onClick={() => handleAddTag(tag)}
-                    className="px-3 py-1 rounded-full bg-surface-800 text-xs text-white/60 hover:text-white"
-                  >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Publish */}
-            <button className="w-full py-4 bg-pop-500 text-white font-bold rounded-2xl text-lg hover:bg-pop-600 active:scale-95 transition-all shadow-pop">
-              Publish
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <div className="h-full overflow-y-auto bg-[#09090b] pb-28">
+    <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-black/75 px-4 py-4 backdrop-blur-xl"><div className="flex items-center gap-3"><button onClick={()=>step===1?router.back():setStep(step-1)} className="rounded-full bg-white/5 p-2 text-white/70"><ArrowLeft size={18}/></button><div className="flex-1"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Create Challenge</p><h1 className="text-lg font-black text-white">{step===1?'Set the question':step===2?'Add your side':'Choose your opponent'}</h1></div><span className="text-xs font-bold text-white/30">{step}/3</span></div><div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-pop-500 to-neon-500" style={{width:(step*33.33)+'%'}}/></div></header>
+    <main className="space-y-5 px-4 pt-5">
+      {step===1&&<><section className="rounded-3xl border border-white/10 bg-white/[0.035] p-5"><div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-pop-500/15 text-pop-300"><Sparkles size={21}/></div><label className="text-xs font-bold uppercase tracking-[0.15em] text-white/40">Your question</label><textarea value={title} onChange={e=>setTitle(e.target.value)} maxLength={80} placeholder="Who has the better style?" className="mt-3 h-28 w-full resize-none bg-transparent text-2xl font-black leading-tight text-white outline-none placeholder:text-white/20"/><div className="text-right text-[10px] text-white/25">{title.length}/80</div></section><section><p className="mb-3 text-xs font-bold uppercase tracking-[0.15em] text-white/40">Category</p><div className="flex flex-wrap gap-2">{categories.map(cat=><button key={cat} onClick={()=>setCategory(cat)} className={['rounded-full px-4 py-2 text-xs font-bold',category===cat?'bg-white text-black':'bg-white/5 text-white/55'].join(' ')}>{cat}</button>)}</div></section></>}
+      {step===2&&<><section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]"><div className="aspect-[4/5] overflow-hidden"><img src={media} alt="Your challenge side" className="h-full w-full object-cover"/></div><div className="p-4"><p className="text-xs font-bold uppercase tracking-[0.15em] text-pop-300">Your side</p><p className="mt-1 text-lg font-black text-white">This is what voters will compare.</p><button onClick={()=>setMedia('https://picsum.photos/seed/side-'+Date.now()+'/900/1100')} className="mt-3 flex items-center gap-2 rounded-xl bg-white/5 px-3 py-2 text-xs font-bold text-white/70"><ImagePlus size={15}/> Change media</button></div></section><div className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.025] p-4"><ShieldCheck size={18} className="shrink-0 text-emerald-400"/><p className="text-xs leading-5 text-white/45">Your opponent adds their own media. You never need to upload both sides yourself.</p></div></>}
+      {step===3&&<><section className="space-y-3"><button onClick={()=>setMode('direct')} className={['flex w-full items-center gap-4 rounded-3xl border p-5 text-left',mode==='direct'?'border-pop-400/60 bg-pop-500/10':'border-white/10 bg-white/[0.035]'].join(' ')}><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5"><UserRound size={22} className="text-white/70"/></div><div className="flex-1"><p className="font-black text-white">Challenge someone</p><p className="mt-1 text-xs leading-5 text-white/40">Pick a friend or creator you want to face.</p></div>{mode==='direct'?<Check size={19} className="text-pop-300"/>:<ChevronRight size={19} className="text-white/25"/>}</button><button onClick={()=>setMode('open')} className={['flex w-full items-center gap-4 rounded-3xl border p-5 text-left',mode==='open'?'border-neon-400/60 bg-neon-500/10':'border-white/10 bg-white/[0.035]'].join(' ')}><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5"><Link2 size={22} className="text-white/70"/></div><div className="flex-1"><p className="font-black text-white">Open Challenge</p><p className="mt-1 text-xs leading-5 text-white/40">Share a link. The first person who joins becomes your opponent.</p></div>{mode==='open'?<Check size={19} className="text-neon-300"/>:<ChevronRight size={19} className="text-white/25"/>}</button></section>
+      {mode==='direct'&&<section className="rounded-3xl border border-white/10 bg-white/[0.035] p-4"><label className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.15em] text-white/40"><Search size={14}/> Find opponent</label><input value={opponent} onChange={e=>setOpponent(e.target.value.replace('@',''))} placeholder="username" className="mt-3 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-bold text-white outline-none"/></section>}
+      {mode==='open'&&<div className="rounded-3xl border border-neon-400/20 bg-neon-500/5 p-5"><div className="flex items-start gap-3"><Users size={18} className="mt-0.5 text-neon-300"/><div><p className="font-bold text-white">No opponent? No problem.</p><p className="mt-1 text-xs leading-5 text-white/45">Your Challenge waits until someone joins. Share it anywhere to find your opponent.</p></div></div></div>}</>}
+      <button disabled={!canContinue} onClick={()=>step<3?setStep(step+1):setPublished(true)} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white py-4 text-sm font-black text-black disabled:opacity-25">{step<3?<>Continue <ChevronRight size={17}/></>:mode==='open'?<>Create & Share <Send size={16}/></>:<>Send Challenge <Send size={16}/></>}</button>
+    </main>
+  </div>;
 }
