@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { getChallengeWorkflow, challengeProgress } from '@/data/challengeWorkflow';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Clock3, Copy, Link2, ShieldAlert, Swords, Trophy, UserPlus, X, Zap } from 'lucide-react';
 
@@ -23,11 +24,12 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const challengeId = params?.id || 'new';
-  const [state, setState] = useState<State>(initialState);
+  const workflow = challengeId === 'new' ? null : getChallengeWorkflow(challengeId);
+  const [state, setState] = useState<State>(workflow?.status === 'waiting_for_opponent' ? 'waiting' : workflow?.status === 'live' ? 'live' : initialState);
   const [copied, setCopied] = useState(false);
   const current = useMemo(() => states.find(item => item.id === state)!, [state]);
   const terminal = ['declined', 'cancelled', 'expired'].includes(state);
-  const progress = ['waiting', 'opponent_joined', 'ready', 'live', 'closed', 'result'].indexOf(state);
+  const progress = challengeProgress(state === 'waiting' ? 'waiting_for_opponent' : state === 'closed' ? 'voting_closed' : state);
 
   const copyInvite = async () => {
     if (navigator.clipboard) await navigator.clipboard.writeText(window.location.href);
@@ -49,7 +51,8 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
             <span className="rounded-full bg-pop-500/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[.14em] text-pop-300">{current.eyebrow}</span>
             {state === 'live' ? <Zap size={18} className="text-pop-300" fill="currentColor"/> : terminal ? <ShieldAlert size={18} className="text-white/35"/> : <Clock3 size={18} className="text-white/35"/>}
           </div>
-          <h1 className="mt-5 text-3xl font-black tracking-[-.045em] text-white">{current.label}</h1>
+          <h1 className="mt-5 text-3xl font-black tracking-[-.045em] text-white">{workflow?.title || current.label}</h1>
+          {workflow && <p className="mt-2 text-xs font-bold text-white/30">{workflow.category} · {workflow.visibility === 'direct' ? 'Direct challenge' : 'Open challenge'}</p>}
           <p className="mt-3 text-sm leading-6 text-white/45">{current.description}</p>
 
           {!terminal && (
@@ -62,8 +65,8 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
           )}
 
           <div className="mt-6 grid grid-cols-2 gap-2">
-            <Side label="Your side" image="https://picsum.photos/seed/status-a/700/850" ready={state !== 'waiting'}/>
-            <Side label={state === 'waiting' ? 'Opponent' : 'Alex Morgan'} image="https://picsum.photos/seed/status-b/700/850" ready={!['waiting','opponent_joined'].includes(state)}/>
+            <Side label="Your side" image={workflow?.creatorSide || 'https://picsum.photos/seed/status-a/700/850'} ready={state !== 'waiting'}/>
+            <Side label={state === 'waiting' ? 'Opponent' : 'Alex Morgan'} image={workflow?.opponentSide || 'https://picsum.photos/seed/status-b/700/850'} ready={!['waiting','opponent_joined'].includes(state)}/>
           </div>
         </div>
 
