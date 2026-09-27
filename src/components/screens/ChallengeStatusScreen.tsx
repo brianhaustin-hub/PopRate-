@@ -25,7 +25,7 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
   const params = useParams<{ id: string }>();
   const challengeId = params?.id || 'new';
   const workflow = challengeId === 'new' ? null : getChallengeWorkflow(challengeId);
-  const [state, setState] = useState<State>(workflow?.status === 'waiting_for_opponent' ? 'waiting' : workflow?.status === 'live' ? 'live' : initialState);
+  const [state, setState] = useState<State>(() => { const status = workflow?.status; if (status === 'waiting_for_opponent') return 'waiting'; if (status === 'opponent_joined') return 'opponent_joined'; if (status === 'ready') return 'ready'; if (status === 'live') return 'live'; if (status === 'voting_closed') return 'closed'; if (status === 'result') return 'result'; return initialState; });
   const [copied, setCopied] = useState(false);
   const current = useMemo(() => states.find(item => item.id === state)!, [state]);
   const terminal = ['declined', 'cancelled', 'expired'].includes(state);
@@ -66,7 +66,7 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
 
           <div className="mt-6 grid grid-cols-2 gap-2">
             <Side label="Your side" image={workflow?.creatorSide || 'https://picsum.photos/seed/status-a/700/850'} ready={state !== 'waiting'}/>
-            <Side label={state === 'waiting' ? 'Opponent' : 'Alex Morgan'} image={workflow?.opponentSide || 'https://picsum.photos/seed/status-b/700/850'} ready={!['waiting','opponent_joined'].includes(state)}/>
+            <Side label={state === 'waiting' ? 'Opponent' : workflow?.opponent?.name || 'Alex Morgan'} image={workflow?.opponentSide || 'https://picsum.photos/seed/status-b/700/850'} ready={!['waiting','opponent_joined'].includes(state)}/>
           </div>
         </div>
 
