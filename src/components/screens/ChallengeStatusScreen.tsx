@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Clock3, Copy, Link2, ShieldAlert, Swords, Trophy, UserPlus, X, Zap } from 'lucide-react';
 
@@ -20,6 +21,8 @@ const states: { id: State; label: string; eyebrow: string; description: string }
 
 export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialState?: State }) {
   const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const challengeId = params?.id || 'new';
   const [state, setState] = useState<State>(initialState);
   const [copied, setCopied] = useState(false);
   const current = useMemo(() => states.find(item => item.id === state)!, [state]);
@@ -36,7 +39,7 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
     <div className="h-full overflow-y-auto bg-[#09090b] pb-10">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/[.06] bg-black/75 px-4 py-3 backdrop-blur-xl">
         <button onClick={() => router.back()} className="grid h-10 w-10 place-items-center rounded-full bg-white/[.06]" aria-label="Back"><ArrowLeft size={18}/></button>
-        <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-pop-400">Challenge status</p><p className="text-xs text-white/35">#PR-2048</p></div>
+        <div className="text-center"><p className="text-[10px] font-black uppercase tracking-[.18em] text-pop-400">Challenge status</p><p className="text-xs text-white/35">#{challengeId === 'new' ? 'PR-2048' : challengeId.toUpperCase()}</p></div>
         <button onClick={copyInvite} className="grid h-10 w-10 place-items-center rounded-full bg-white/[.06]" aria-label="Share">{copied ? <Check size={17}/> : <Copy size={17}/>}</button>
       </header>
 
@@ -92,7 +95,7 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
           </div>
         </div>
 
-        <button onClick={() => router.push(state === 'result' ? '/challenge/1/result' : '/challenges')} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/[.06] text-sm font-bold text-white/70">
+        <button onClick={() => router.push(state === 'result' ? '/challenge/'+challengeId+'/result' : '/challenges')} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/[.06] text-sm font-bold text-white/70">
           {state === 'result' ? <><Trophy size={16}/> View final result</> : <><Swords size={16}/> Back to arena</>}
         </button>
       </main>
