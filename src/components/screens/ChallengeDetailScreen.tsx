@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Check, ChevronRight, Clock3, Flag, Heart, MessageCircle, Share2, Trophy, Users, Zap } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, Clock3, Heart, MessageCircle, MoreHorizontal, Share2, ShieldAlert, Trophy, UserX, Users, Zap } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 
 type Mode = 'live' | 'result';
@@ -14,6 +14,12 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const [voted, setVoted] = useState(false);
   const [liked, setLiked] = useState(false);
   const [shared, setShared] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [comment, setComment] = useState('');
+  const [comments, setComments] = useState(['Clean matchup 👏', 'Both sides came prepared.', 'This one is close.']);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [reported, setReported] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   const isResult = mode === 'result';
   const votesA = isResult ? 642 : 418;
@@ -21,6 +27,8 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const total = votesA + votesB;
   const percentA = Math.round((votesA / total) * 100);
   const percentB = 100 - percentA;
+
+  const submitComment = () => { if (!comment.trim()) return; setComments((items) => [...items, comment.trim()]); setComment(''); };
 
   const submitVote = () => {
     if (!selected || voted || isResult) return;
@@ -90,9 +98,18 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
 
         <div className="mt-5 flex items-center justify-between border-y border-white/[.06] py-4">
           <button onClick={() => setLiked(!liked)} className={`flex items-center gap-2 text-sm font-semibold ${liked ? 'text-pop-400' : 'text-white/50'}`}><Heart size={19} fill={liked ? 'currentColor' : 'none'} /> {liked ? 'Liked' : 'Like'}</button>
-          <button className="flex items-center gap-2 text-sm font-semibold text-white/50"><MessageCircle size={19} /> 84 comments</button>
-          <button className="flex items-center gap-2 text-sm font-semibold text-white/50"><Flag size={18} /> Report</button>
+          <button onClick={() => setCommentsOpen(!commentsOpen)} className={`flex items-center gap-2 text-sm font-semibold ${commentsOpen ? 'text-pop-400' : 'text-white/50'}`}><MessageCircle size={19} /> {comments.length} comments</button>
+          <div className="relative"><button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center gap-2 text-sm font-semibold text-white/50"><MoreHorizontal size={19} /> More</button>{menuOpen && <div className="absolute bottom-12 right-0 z-20 w-48 overflow-hidden rounded-2xl border border-white/10 bg-surface-900 p-1 shadow-2xl"><button onClick={() => { setReported(true); setMenuOpen(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold"><ShieldAlert size={17}/> Report challenge</button><button onClick={() => { setBlocked(true); setMenuOpen(false); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-300"><UserX size={17}/> Block creator</button></div>}</div>
         </div>
+
+        {reported && <div className="mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-xs font-semibold text-emerald-300">Thanks. This challenge has been reported for review.</div>}
+        {blocked && <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 p-3 text-xs font-semibold text-red-300">Alex Morgan is blocked. Their challenges can be hidden from your feed.</div>}
+
+        {commentsOpen && <section className="mt-5 rounded-[1.5rem] border border-white/[.07] bg-white/[.025] p-4">
+          <div className="flex items-center justify-between"><p className="text-sm font-black">Comments</p><button onClick={() => setCommentsOpen(false)} className="text-xs text-white/35">Close</button></div>
+          <div className="mt-4 space-y-3">{comments.map((item, index) => <div key={index} className="rounded-xl bg-white/[.04] px-3 py-2.5 text-sm text-white/70">{item}</div>)}</div>
+          <div className="mt-4 flex gap-2"><input value={comment} onChange={(e) => setComment(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submitComment()} placeholder="Add a comment…" className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/10 px-3 text-sm outline-none placeholder:text-white/25"/><button onClick={submitComment} className="rounded-xl bg-pop-500 px-4 text-sm font-bold">Post</button></div>
+        </section>}
 
         {isResult && votesA === votesB && (
           <div className="mt-5 rounded-[1.5rem] border border-amber-400/20 bg-amber-400/5 p-5"><div className="flex items-center gap-3"><Trophy className="text-amber-300" size={22}/><div><p className="text-xs font-black uppercase tracking-[.15em] text-amber-300">TIE</p><p className="mt-1 text-xl font-black">The arena ended level.</p></div></div><p className="mt-3 text-sm leading-6 text-white/45">Both sides received the same number of votes. No winner is declared.</p></div>
