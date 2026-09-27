@@ -170,7 +170,7 @@ export function SearchScreen() {
                     key={item.id || item.name || item || index}
                     onClick={() => {
                       if (activeTab === 'people' || activeTab === 'creators') router.push('/user/' + item.username);
-                      else if (activeTab === 'posts') router.push('/discover');
+                      else if (activeTab === 'posts') router.push('/post/' + item.id);
                     }}
                     className="w-full flex items-center gap-3 p-3 bg-surface-900 rounded-2xl border border-white/5 text-left hover:border-white/10"
                   >
