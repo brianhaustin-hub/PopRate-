@@ -3,7 +3,6 @@
 import { users, posts } from '@/data/mock';
 import { getFollowedUserIds, currentUser, isFollowing, toggleFollow as graphToggleFollow } from '@/data/socialGraph';
 import { getCreatorAffinity } from '@/data/behaviorStore';
-import { addActivity } from '@/data/activityStore';
 
 export type SuggestedUser = {
   user: (typeof users)[number];
@@ -42,14 +41,5 @@ export function followSuggestedPerson(userId: string) {
   if (isFollowing(userId)) return false;
   const user = users.find(item => item.id === userId);
   if (!user) return false;
-  const followed = graphToggleFollow(userId);
-  if (followed) {
-    addActivity({
-      type: 'follow',
-      title: 'You followed ' + user.displayName,
-      message: 'Their PopRates will shape your feed.',
-      image: user.avatar,
-    });
-  }
-  return followed;
+  return graphToggleFollow(userId);
 }
