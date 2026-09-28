@@ -1,17 +1,19 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, posts } from '@/data/mock';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Check, Grid3X3, MessageCircle, Share2, Star, Trophy, UserPlus } from 'lucide-react';
+import { isFollowing, subscribeSocialGraph, toggleFollow } from '@/data/socialGraph';
 
 export function PublicProfileScreen({ user }: { user: User }) {
   const router = useRouter();
-  const [following, setFollowing] = useState(user.isFollowing);
+  const [following, setFollowing] = useState(() => isFollowing(user.id));
   const [copied, setCopied] = useState(false);
+  useEffect(() => subscribeSocialGraph(() => setFollowing(isFollowing(user.id))), [user.id]);
 
   const userPosts = useMemo(
     () => posts.filter((post) => post.creator.id === user.id),
@@ -69,7 +71,7 @@ export function PublicProfileScreen({ user }: { user: User }) {
               size="sm"
               variant={following ? 'secondary' : 'neon'}
               className="flex-1"
-              onClick={() => setFollowing((value) => !value)}
+              onClick={() => { const next = toggleFollow(user.id); setFollowing(next); }}
             >
               {following ? <Check size={14} className="mr-1.5" /> : <UserPlus size={14} className="mr-1.5" />}
               {following ? 'Following' : 'Follow'}
