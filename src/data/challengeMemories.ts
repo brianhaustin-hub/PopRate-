@@ -40,6 +40,18 @@ export function getChallengeMemories() {
   return memories.filter((item) => item.visible && new Date(item.expiresAt).getTime() > now);
 }
 
+export function expireChallengeMemories(now = Date.now()) {
+  let changed = false;
+  for (const item of memories) {
+    if (item.visible && new Date(item.expiresAt).getTime() <= now) {
+      item.visible = false;
+      changed = true;
+    }
+  }
+  if (changed) emit();
+  return changed;
+}
+
 export function subscribeChallengeMemories(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
