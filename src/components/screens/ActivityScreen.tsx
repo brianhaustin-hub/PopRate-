@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Notification } from '@/types';
 import { getActivity, subscribeActivity } from '@/data/activityStore';
+import { useRouter } from 'next/navigation';
 
 type ActivityFilter = 'all' | 'likes' | 'comments' | 'follows' | 'ratings' | 'challenges';
 
@@ -53,6 +54,7 @@ const filterMap: Record<ActivityFilter, Notification['type'][]> = {
 };
 
 export function ActivityScreen() {
+  const router = useRouter();
   const [items, setItems] = useState<Notification[]>(getActivity());
   const [filter, setFilter] = useState<ActivityFilter>('all');
 
@@ -142,7 +144,7 @@ export function ActivityScreen() {
               return (
                 <button
                   key={notification.id}
-                  onClick={() => markRead(notification.id)}
+                  onClick={() => { markRead(notification.id); if (notification.href) router.push(notification.href); }}
                   className={
                     notification.read
                       ? 'w-full flex items-center gap-3 p-3.5 rounded-2xl text-left transition hover:bg-surface-900/70'
