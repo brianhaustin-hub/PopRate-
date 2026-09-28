@@ -2,14 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { posts, comments } from '@/data/mock';
+import { posts } from '@/data/mock';
 import { getUnifiedContent } from '@/data/content';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { MediaFrame } from '@/components/ui/MediaFrame';
-import { addChallengeMemoryComment, getChallengeMemoryById, shareChallengeMemory, subscribeChallengeMemories, toggleChallengeMemoryLike, toggleChallengeMemorySave } from '@/data/challengeMemories';
+import { addChallengeMemoryComment, getChallengeMemoryById, shareChallengeMemory, subscribeChallengeMemories } from '@/data/challengeMemories';
 import { ArrowLeft, Bookmark, Check, Heart, MessageCircle, MoreHorizontal, Send, Share2, Star, UserPlus, Trophy } from 'lucide-react';
 import { ratePost, toggleLike, toggleSave, usePostEngagement } from '@/data/postEngagement';
+import { useUnifiedEngagement } from '@/data/contentEngagement';
+import { addPostComment, useContentComments } from '@/data/contentComments';
 
 export function PostDetailScreen({ postId }: { postId: string }) {
   const router = useRouter();
@@ -20,20 +22,19 @@ export function PostDetailScreen({ postId }: { postId: string }) {
 
   const unified = getUnifiedContent(postId);
   const post = useMemo(() => posts.find((item) => item.id === postId) ?? posts[0], [postId]);
-  const postComments = useMemo(() => comments.filter((item) => item.postId === post.id), [post.id]);
-  return <RegularPostDetail post={post} unified={unified} postComments={postComments} onBack={() => router.back()} />;
+  return <RegularPostDetail post={post} unified={unified} onBack={() => router.back()} />;
 }
 
 function ChallengeMemoryDetail({ memory, onBack }: { memory: NonNullable<ReturnType<typeof getChallengeMemoryById>>; onBack: () => void }) {
   const router = useRouter();
   const [comment, setComment] = useState('');
   const [shared, setShared] = useState(false);
-  const [saved, setSaved] = useState(memory.saves > 0);
-  const [liked, setLiked] = useState(memory.liked);
+  const engagement = useUnifiedEngagement('challenge_memory', memory.challengeId);
+  const memoryComments = useContentComments(memory.challengeId, 'challenge_memory');
   const [commentsOpen, setCommentsOpen] = useState(false);
 
   const share = async () => {
-    shareChallengeMemory(memory.challengeId);
+    engagement.share();
     const url = typeof window !== 'undefined' ? window.location.href : '';
     try {
       if (navigator.share) await navigator.share({ title: memory.title, url });
@@ -88,8 +89,8 @@ function ChallengeMemoryDetail({ memory, onBack }: { memory: NonNullable<ReturnT
 
         <div className="flex items-center justify-between mt-5 py-3 border-y border-white/5">
           <div className="flex items-center gap-5">
-            <button onClick={() => { toggleChallengeMemoryLike(memory.challengeId); setLiked(v => !v); }} className={`flex items-center gap-1.5 text-sm font-semibold ${liked ? 'text-pop-400' : 'text-white/65'}`}><Heart size={19} fill={liked ? 'currentColor' : 'none'}/> {memory.likes + (liked && !memory.liked ? 1 : 0)}</button>
-            <button onClick={() => setCommentsOpen(v => !v)} className="flex items-center gap-1.5 text-sm text-white/45"><MessageCircle size={19}/> {memory.comments.length}</button>
+            <button onClick={engagement.toggleLike} className={`flex items-center gap-1.5 text-sm font-semibold ${engagement.liked ? 'text-pop-400' : 'text-white/65'}`}><Heart size={19} fill={engagement.liked ? 'currentColor' : 'none'}/> {engagement.likes}</button>
+            <button onClick={() => setCommentsOpen(v => !v)} className="flex items-center gap-1.5 text-sm text-white/45"><MessageCircle size={19}/> {memoryComments.length}</button>
             <button onClick={share} className="flex items-center gap-1.5 text-sm text-white/45"><Send size={18}/> Share</button>
           </div>
           <button onClick={() => { toggleChallengeMemorySave(memory.challengeId); setSaved(v => !v); }}><Bookmark size={20} fill={saved ? 'currentColor' : 'none'}/></button>
@@ -97,7 +98,7 @@ function ChallengeMemoryDetail({ memory, onBack }: { memory: NonNullable<ReturnT
 
         {commentsOpen && <section className="mt-5 rounded-3xl bg-surface-900 border border-white/5 p-4">
           <h2 className="text-base font-black">Comments</h2>
-          <div className="mt-4 space-y-3">{memory.comments.map((item, i) => <p key={i} className="rounded-2xl bg-white/[.04] px-3 py-2.5 text-sm text-white/70">{item}</p>)}</div>
+          <div className="mt-4 space-y-3">{memoryComments.map(item => <p key={item.id} className="rounded-2xl bg-white/[.04] px-3 py-2.5 text-sm text-white/70">@{item.author.username} · {item.text}</p>)}</div>
         </section>}
       </section>
     </main>
@@ -108,9 +109,10 @@ function ChallengeMemoryDetail({ memory, onBack }: { memory: NonNullable<ReturnT
   </div>;
 }
 
-function RegularPostDetail({ post, unified, postComments, onBack }: { post: any; unified: ReturnType<typeof getUnifiedContent>; postComments: any[]; onBack: () => void }) {
+function RegularPostDetail({ post, unified, onBack }: { post: any; unified: ReturnType<typeof getUnifiedContent>; onBack: () => void }) {
   const router = useRouter();
   const engagement = usePostEngagement(post.id);
+  const postComments = useContentComments(post.id, 'post');
   const content = unified ?? getUnifiedContent(post.id);
   const [rating, setRating] = useState<number | null>(engagement.rating ?? null);
   const [following, setFollowing] = useState(post.creator.isFollowing);
@@ -139,8 +141,8 @@ function RegularPostDetail({ post, unified, postComments, onBack }: { post: any;
         <div className="flex items-center justify-between mt-5 py-3 border-y border-white/5"><div className="flex items-center gap-5"><button onClick={() => toggleLike(post.id)} className="flex items-center gap-1.5 text-sm font-semibold"><Heart size={19} className={engagement.liked ? 'fill-pop-500 text-pop-500' : ''}/> {engagement.likes.toLocaleString()}</button><span className="flex items-center gap-1.5 text-sm text-white/45"><MessageCircle size={19}/> {post.comments}</span><button onClick={share} className="flex items-center gap-1.5 text-sm text-white/45"><Send size={18}/> Share</button></div><button onClick={() => toggleSave(post.id)}><Bookmark size={20} className={engagement.saved ? 'fill-white text-white' : ''}/></button></div>
       </section>
       <section className="mx-4 mt-5 rounded-3xl bg-surface-900 border border-white/5 p-4"><div className="flex items-center justify-between"><div><p className="text-[10px] uppercase tracking-[.18em] text-pop-400 font-black">Your take</p><h2 className="text-base font-black mt-1">Rate this PopRate</h2></div>{rating && <span className="text-xl font-black text-pop-400">{rating}/10</span>}</div><div className="grid grid-cols-5 gap-2 mt-4">{[1,2,3,4,5,6,7,8,9,10].map(value => <button key={value} onClick={() => {setRating(value);ratePost(post.id,value)}} className={rating===value?'h-10 rounded-xl bg-pop-500 text-white font-black text-xs':'h-10 rounded-xl bg-surface-800 text-white/55 font-bold text-xs'}>{value}</button>)}</div></section>
-      <section className="px-4 mt-6"><div className="flex items-center justify-between mb-3"><h2 className="text-base font-black">Comments</h2><span className="text-xs text-white/30">{postComments.length} shown</span></div><div className="space-y-4">{postComments.map(item => <div key={item.id} className="flex gap-3"><Avatar src={item.user.avatar} alt={item.user.displayName} size="sm"/><div className="flex-1"><p className="text-xs font-bold">{item.user.displayName} <span className="font-normal text-white/30">@{item.user.username}</span></p><p className="text-sm text-white/65 mt-1">{item.text}</p><p className="text-[10px] text-white/25 mt-1">{item.likes} likes</p></div></div>)}</div></section>
+      <section className="px-4 mt-6"><div className="flex items-center justify-between mb-3"><h2 className="text-base font-black">Comments</h2><span className="text-xs text-white/30">{postComments.length} shown</span></div><div className="space-y-4">{postComments.map(item => <div key={item.id} className="flex gap-3"><Avatar src={item.author.avatar} alt={item.author.displayName} size="sm"/><div className="flex-1"><p className="text-xs font-bold">{item.author.displayName} <span className="font-normal text-white/30">@{item.author.username}</span></p><p className="text-sm text-white/65 mt-1">{item.text}</p><p className="text-[10px] text-white/25 mt-1">{item.likes} likes</p></div></div>)}</div></section>
     </main>
-    <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-2xl -translate-x-1/2 border-t border-white/5 bg-surface-950/95 px-4 py-3 backdrop-blur-xl"><div className="flex items-center gap-2"><Avatar src="https://picsum.photos/seed/me/100/100" size="sm"/><div className="flex-1 flex items-center rounded-full bg-surface-800 border border-white/5 px-4 py-2"><input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Add a comment..." className="flex-1 bg-transparent outline-none text-sm placeholder:text-white/25"/></div><button disabled={!comment.trim()} className="w-10 h-10 rounded-full bg-pop-500 disabled:opacity-30 flex items-center justify-center"><Send size={16}/></button></div></div>
+    <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-2xl -translate-x-1/2 border-t border-white/5 bg-surface-950/95 px-4 py-3 backdrop-blur-xl"><div className="flex items-center gap-2"><Avatar src="https://picsum.photos/seed/me/100/100" size="sm"/><div className="flex-1 flex items-center rounded-full bg-surface-800 border border-white/5 px-4 py-2"><input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Add a comment..." className="flex-1 bg-transparent outline-none text-sm placeholder:text-white/25"/></div><button disabled={!comment.trim()} onClick={() => { addPostComment(post.id, comment); setComment(''); }} className="w-10 h-10 rounded-full bg-pop-500 disabled:opacity-30 flex items-center justify-center"><Send size={16}/></button></div></div>
   </div>;
 }
