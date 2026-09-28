@@ -111,6 +111,15 @@ export function getUnifiedFeed(): UnifiedContent[] {
   );
 }
 
+export function getUnifiedProfileContent(): UnifiedContent[] {
+  const normalPosts = posts.map(postToContent);
+  const memories = getChallengeMemories().map(memoryToContent);
+
+  return [...memories, ...normalPosts].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+}
+
 export function getUnifiedVideos(): UnifiedContent[] {
   return getUnifiedFeed().filter((content) =>
     content.media.some((media) => media.type === 'video'),
