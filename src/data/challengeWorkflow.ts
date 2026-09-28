@@ -7,7 +7,13 @@ export interface ChallengeWorkflowRecord {
   creator: { name: string; username: string; image: string };
   opponent: { name: string; username: string; image: string } | null;
   creatorSide: string;
+  creatorMediaType?: 'image' | 'video';
+  creatorMediaUrl?: string;
+  creatorThumbnail?: string;
   opponentSide: string | null;
+  opponentMediaType?: 'image' | 'video';
+  opponentMediaUrl?: string;
+  opponentThumbnail?: string;
   visibility: ChallengeVisibility;
   status: ChallengeStatus;
   votesA: number;
@@ -24,6 +30,12 @@ export const challengeWorkflow: ChallengeWorkflowRecord[] = [
     opponent: { name: 'Maya Chen', username: 'maya.chen', image: 'https://picsum.photos/seed/mayachen/200/200' },
     creatorSide: 'https://picsum.photos/seed/poprate-live-a/700/900',
     opponentSide: 'https://picsum.photos/seed/poprate-live-b/700/900',
+    creatorMediaType: 'video',
+    creatorMediaUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    creatorThumbnail: 'https://picsum.photos/seed/poprate-video-a/700/900',
+    opponentMediaType: 'video',
+    opponentMediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    opponentThumbnail: 'https://picsum.photos/seed/poprate-video-b/700/900',
     visibility: 'open',
     status: 'live',
     votesA: 418,
