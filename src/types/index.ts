@@ -5,7 +5,7 @@ export interface User {
 }
 export type ChallengeStatus = 'draft'|'waiting_for_opponent'|'ready'|'live'|'voting_closed'|'result'|'declined'|'cancelled'|'expired';
 export type ChallengeVisibility = 'direct'|'open';
-export interface ChallengeSide { user: User; image: string; caption?: string; }
+export interface ChallengeSide { user: User; image: string; mediaType?: 'image' | 'video'; mediaUrl?: string; thumbnail?: string; caption?: string; }
 export interface Challenge {
   id: string; title: string; description: string; image: string; participants: number; entries: Post[];
   isActive: boolean; endsAt: string; category: string; status?: ChallengeStatus;
@@ -13,8 +13,9 @@ export interface Challenge {
   creatorSide?: ChallengeSide; opponentSide?: ChallengeSide | null; shareCode?: string;
   votesA?: number; votesB?: number; totalVotes?: number;
 }
+export interface PostMedia { type: 'image' | 'video'; url: string; thumbnail?: string; duration?: number; }
 export interface Post {
-  id: string; creator: User; image: string; caption: string; tags: string[]; category: string;
+  id: string; creator: User; image: string; mediaType?: 'image' | 'video'; mediaUrl?: string; thumbnail?: string; media?: PostMedia[]; caption: string; tags: string[]; category: string;
   rating: number; ratingCount: number; likes: number; comments: number; shares: number; saves: number;
   isLiked: boolean; isSaved: boolean; createdAt: string; battleId?: string; challengeId?: string;
 }
