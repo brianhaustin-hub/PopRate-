@@ -18,6 +18,7 @@ export function MediaFrame({
   loop = false,
   muted = true,
   playsInline = true,
+  active = true,
 }: {
   media: MediaSource;
   alt?: string;
@@ -28,6 +29,7 @@ export function MediaFrame({
   loop?: boolean;
   muted?: boolean;
   playsInline?: boolean;
+  active?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(autoPlay);
@@ -36,8 +38,14 @@ export function MediaFrame({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (autoPlay) video.play().catch(() => setPlaying(false));
-  }, [autoPlay, media.url]);
+    video.muted = muted;
+    if (active) {
+      video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    } else {
+      video.pause();
+      setPlaying(false);
+    }
+  }, [active, autoPlay, media.url, muted]);
 
   if (media.type === 'image') {
     return <img src={media.url} alt={alt} className={className} />;
