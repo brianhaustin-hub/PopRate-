@@ -27,7 +27,7 @@ export interface Battle {
 export interface BattleVote { id:string; userId:string; battleId:string; votedFor:'a'|'b'; createdAt:string; }
 export interface Notification {
   id:string; type:'like'|'comment'|'follow'|'rating'|'battle_result'|'mention'|'trending'|'challenge';
-  title:string; message:string; image?:string; timestamp:string; read:boolean;
+  title:string; message:string; image?:string; href?:string; timestamp:string; read:boolean;
 }
 export interface Comment { id:string; userId:string; user:User; postId:string; text:string; likes:number; createdAt:string; }
 export type FeedTab='forYou'|'following'|'battles'|'challenges';
