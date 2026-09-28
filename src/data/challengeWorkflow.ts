@@ -74,11 +74,22 @@ export const challengeWorkflow: ChallengeWorkflowRecord[] = [
   },
 ];
 
+const lifecycle: ChallengeStatus[] = [
+  'waiting_for_opponent',
+  'opponent_invited',
+  'opponent_joined',
+  'ready',
+  'live',
+  'voting_closed',
+  'result',
+];
+
+const workflowListeners = new Set<() => void>();
+const votesByUser = new Map<string, Set<string>>();
+
 export function getChallengeWorkflow(id: string) {
   return challengeWorkflow.find((challenge) => challenge.id === id) ?? null;
 }
-
-const lifecycle: ChallengeStatus[] = ['waiting_for_opponent', 'opponent_joined', 'ready', 'live', 'voting_closed', 'result'];
 
 export function subscribeChallengeWorkflow(listener: () => void) {
   workflowListeners.add(listener);
@@ -97,10 +108,16 @@ function validStatus(status: ChallengeStatus, allowed: ChallengeStatus[]) {
   return allowed.includes(status);
 }
 
+function hasBothSides(challenge: ChallengeWorkflowRecord) {
+  return Boolean(challenge.opponent && challenge.creatorSide && challenge.opponentSide);
+}
 
 export function setChallengeStatus(id: string, status: ChallengeStatus) {
   const challenge = getChallengeWorkflow(id);
   if (!challenge) return null;
+  if (status === 'ready' && !hasBothSides(challenge)) return null;
+  if (status === 'live' && !hasBothSides(challenge)) return null;
+
   challenge.status = status;
   emitWorkflow();
   return challenge;
@@ -118,13 +135,15 @@ export function joinOpenChallenge(
   const challenge = getChallengeWorkflow(id);
   if (!challenge || challenge.visibility !== 'open' || challenge.opponent) return null;
   if (!validStatus(challenge.status, ['waiting_for_opponent'])) return null;
+  if (opponent.username === challenge.creator.username) return null;
+  if (new Date(challenge.endsAt).getTime() <= Date.now()) return expireChallenge(id);
 
   challenge.opponent = opponent;
   challenge.opponentSide = opponentSide?.thumbnail ?? opponentSide?.mediaUrl ?? null;
   challenge.opponentMediaType = opponentSide?.mediaType;
   challenge.opponentMediaUrl = opponentSide?.mediaUrl;
   challenge.opponentThumbnail = opponentSide?.thumbnail;
-  challenge.status = opponentSide ? 'ready' : 'opponent_joined';
+  challenge.status = opponentSide && challenge.creatorSide ? 'ready' : 'opponent_joined';
 
   recordBehavior({
     type: 'challenge_open',
@@ -180,18 +199,32 @@ export function submitChallengeSide(
     challenge.opponentThumbnail = media.thumbnail;
   }
 
-  if (challenge.creatorSide && challenge.opponentSide) challenge.status = 'ready';
+  if (hasBothSides(challenge)) challenge.status = 'ready';
   else if (challenge.opponent) challenge.status = 'opponent_joined';
 
   emitWorkflow();
   return challenge;
 }
 
-export function castChallengeVote(id: string, side: 'a' | 'b') {
+export function castChallengeVote(id: string, side: 'a' | 'b', userId = 'current-user') {
   const challenge = getChallengeWorkflow(id);
-  if (!challenge || challenge.status !== 'live') return null;
+  if (!challenge || challenge.status !== 'live' || !hasBothSides(challenge)) return null;
+
+  const voters = votesByUser.get(id) ?? new Set<string>();
+  if (voters.has(userId)) return null;
+  voters.add(userId);
+  votesByUser.set(id, voters);
+
   if (side === 'a') challenge.votesA += 1;
   else challenge.votesB += 1;
+
+  recordBehavior({
+    type: 'rate',
+    contentId: id,
+    category: challenge.category,
+    score: side === 'a' ? 10 : 1,
+    dedupeKey: 'challenge-vote:' + id + ':' + userId,
+  });
   emitWorkflow();
   return challenge;
 }
@@ -204,20 +237,69 @@ export function closeChallengeVoting(id: string) {
   return challenge;
 }
 
-const workflowListeners = new Set<() => void>();
+export function expireChallenge(id: string) {
+  const challenge = getChallengeWorkflow(id);
+  if (!challenge) return null;
+  if (['result', 'cancelled', 'declined', 'expired'].includes(challenge.status)) return challenge;
+
+  challenge.status = 'expired';
+  addActivity({
+    type: 'challenge',
+    title: 'Challenge expired',
+    message: challenge.title,
+    image: challenge.creator.image,
+    href: '/challenge/' + challenge.id + '/status',
+  });
+  emitWorkflow();
+  return challenge;
+}
+
+export function expireDueChallenges(now = Date.now()) {
+  const expired: ChallengeWorkflowRecord[] = [];
+
+  for (const challenge of challengeWorkflow) {
+    if (
+      new Date(challenge.endsAt).getTime() <= now &&
+      !['result', 'cancelled', 'declined', 'expired'].includes(challenge.status)
+    ) {
+      const next = expireChallenge(challenge.id);
+      if (next) expired.push(next);
+    }
+  }
+
+  return expired;
+}
 
 export function advanceChallenge(id: string) {
   const challenge = getChallengeWorkflow(id);
   if (!challenge) return null;
-  const next: Partial<Record<ChallengeStatus, ChallengeStatus>> = {
-    waiting_for_opponent: 'opponent_joined',
-    opponent_invited: 'opponent_joined',
-    opponent_joined: 'ready',
-    ready: 'live',
-    live: 'voting_closed',
-    voting_closed: 'result',
-  };
-  const nextStatus = next[challenge.status];
-  if (nextStatus) challenge.status = nextStatus;
+
+  if (
+    new Date(challenge.endsAt).getTime() <= Date.now() &&
+    !['result', 'cancelled', 'declined', 'expired'].includes(challenge.status)
+  ) {
+    return expireChallenge(id);
+  }
+
+  switch (challenge.status) {
+    case 'opponent_joined':
+      if (!hasBothSides(challenge)) return null;
+      challenge.status = 'ready';
+      break;
+    case 'ready':
+      if (!hasBothSides(challenge)) return null;
+      challenge.status = 'live';
+      break;
+    case 'live':
+      challenge.status = 'voting_closed';
+      break;
+    case 'voting_closed':
+      challenge.status = 'result';
+      break;
+    default:
+      return null;
+  }
+
+  emitWorkflow();
   return challenge;
 }
