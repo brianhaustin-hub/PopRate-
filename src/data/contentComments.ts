@@ -1,14 +1,15 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { comments } from '@/data/mock';
+import { comments, posts, users } from '@/data/mock';
 import { addChallengeMemoryComment, getChallengeMemory, subscribeChallengeMemories } from '@/data/challengeMemories';
-import { posts } from '@/data/mock';
 import { recordBehavior } from '@/data/behaviorStore';
 import { addActivity } from '@/data/activityStore';
+import { toggleFollow } from '@/data/socialGraph';
 
 export type ContentComment = {
   id: string;
+  authorId?: string;
   author: { displayName: string; username: string; avatar: string };
   text: string;
   createdAt: string;
@@ -28,6 +29,7 @@ for (const comment of comments) {
   const list = state.get(comment.postId) ?? [];
   list.push({
     id: comment.id,
+    authorId: comment.userId,
     author: {
       displayName: comment.user.displayName,
       username: comment.user.username,
@@ -85,21 +87,58 @@ export function useContentComments(contentId: string, kind: 'post' | 'challenge_
   );
 }
 
+export function getCommentMentionSuggestions(query: string) {
+  const normalized = query.trim().replace(/^@/, '').toLowerCase();
+  return users
+    .filter((user) => user.username.toLowerCase().includes(normalized) || user.displayName.toLowerCase().includes(normalized))
+    .slice(0, 5);
+}
+
+function addMentionActivities(text: string, postId: string) {
+  const mentions = Array.from(text.matchAll(/@([a-zA-Z0-9._-]+)/g)).map((match) => match[1].toLowerCase());
+  const unique = [...new Set(mentions)];
+  for (const username of unique) {
+    const mentioned = users.find((user) => user.username.toLowerCase() === username);
+    if (!mentioned) continue;
+    addActivity({
+      type: 'mention',
+      title: 'You were mentioned in a comment',
+      message: '@' + mentioned.username + ' was mentioned in a PopRate comment',
+      image: mentioned.avatar,
+      href: '/post/' + postId,
+    });
+  }
+}
+
 export function addPostComment(postId: string, text: string, sticker?: string, parentId?: string) {
   const value = text.trim();
   if (!value) return;
   const list = state.get(postId) ?? [];
-  list.push({
+  const comment = {
     id: `comment-${postId}-${Date.now()}`,
+    authorId: '1',
     author: { displayName: 'You', username: 'you', avatar: 'https://picsum.photos/seed/me/100/100' },
     text: value,
     sticker,
     createdAt: new Date().toISOString(),
     likes: 0,
     parentId,
-  });
+  };
+  list.push(comment);
   state.set(postId, list);
-  if (parentId) replyCounts.set(parentId, (replyCounts.get(parentId) ?? 0) + 1);
+  if (parentId) {
+    replyCounts.set(parentId, (replyCounts.get(parentId) ?? 0) + 1);
+    const parent = list.find((item) => item.id === parentId);
+    if (parent) {
+      addActivity({
+        type: 'comment',
+        title: 'You replied to @' + parent.author.username,
+        message: value,
+        image: parent.author.avatar,
+        href: '/post/' + postId,
+      });
+    }
+  }
   const post = posts.find((item) => item.id === postId);
   if (post) post.comments = list.length;
   recordBehavior({
@@ -118,8 +157,9 @@ export function addPostComment(postId: string, text: string, sticker?: string, p
       href: '/post/' + postId,
     });
   }
+  addMentionActivities(value, postId);
   emit();
-  return list[list.length - 1];
+  return comment;
 }
 
 export function toggleCommentLike(contentId: string, kind: 'post' | 'challenge_memory', commentId: string) {
@@ -128,10 +168,39 @@ export function toggleCommentLike(contentId: string, kind: 'post' | 'challenge_m
   if (kind === 'post') {
     const list = state.get(contentId) ?? [];
     const item = list.find((comment) => comment.id === commentId);
-    if (item) item.likes = Math.max(0, item.likes + (next ? 1 : -1));
+    if (item) {
+      item.likes = Math.max(0, item.likes + (next ? 1 : -1));
+      if (next) {
+        addActivity({
+          type: 'like',
+          title: 'You liked a comment by @' + item.author.username,
+          message: item.text,
+          image: item.author.avatar,
+          href: '/post/' + contentId,
+        });
+        recordBehavior({ type: 'like', contentId: commentId, kind: 'post' });
+      }
+    }
   }
   emit();
   return next;
+}
+
+export function followCommentAuthor(authorId?: string) {
+  if (!authorId || authorId === '1') return false;
+  toggleFollow(authorId);
+  emit();
+  return true;
+}
+
+export function reportComment(commentId: string) {
+  addActivity({
+    type: 'comment',
+    title: 'Comment reported',
+    message: 'Thanks. The comment was added to your moderation queue.',
+  });
+  recordBehavior({ type: 'comment', contentId: commentId, kind: 'post' });
+  emit();
 }
 
 export function addUnifiedComment(
