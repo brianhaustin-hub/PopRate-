@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { notifications as seedNotifications } from '@/data/mock';
 import { Avatar } from '@/components/ui/Avatar';
 import { formatTimeAgo } from '@/lib/utils';
 import {
