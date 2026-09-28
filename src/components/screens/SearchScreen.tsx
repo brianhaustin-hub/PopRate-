@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { users, posts, categories, trendingTags } from '@/data/mock';
 import { getUnifiedFeed } from '@/data/content';
 import { subscribePublishedContent } from '@/data/contentCreation';
+import { recordBehavior } from '@/data/behaviorStore';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Search, User, Image, Hash, Palette, ArrowUpRight, SlidersHorizontal } from 'lucide-react';
