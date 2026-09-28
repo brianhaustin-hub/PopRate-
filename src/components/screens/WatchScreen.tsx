@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { posts } from '@/data/mock';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { formatNumber } from '@/lib/utils';
+import { ratePost, toggleLike, toggleSave, usePostEngagement } from '@/data/postEngagement';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function WatchScreen() {
@@ -15,8 +16,6 @@ export function WatchScreen() {
   const [muted, setMuted] = useState(true);
   const [rated, setRated] = useState<Record<string, number>>({});
   const [ratingOpen, setRatingOpen] = useState<string | null>(null);
-  const [liked, setLiked] = useState<Record<string, boolean>>({});
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [commentOpen, setCommentOpen] = useState<string | null>(null);
   const [comment, setComment] = useState('');
   const [toast, setToast] = useState<string | null>(null);
@@ -54,8 +53,9 @@ export function WatchScreen() {
   return (
     <div className="relative h-[100dvh] overflow-hidden bg-black text-white">
       <div ref={containerRef} className="h-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain">
-        {videos.map((post, index) => (
-          <section key={post.id} className="relative h-[100dvh] snap-start">
+        {videos.map((post, index) => {
+          const engagement = usePostEngagement(post.id);
+          return <section key={post.id} className="relative h-[100dvh] snap-start">
             <MediaFrame
               media={{ type: 'video', url: post.mediaUrl ?? post.image, thumbnail: post.thumbnail ?? post.image }}
               className="h-full w-full"
@@ -89,8 +89,8 @@ export function WatchScreen() {
               </div>
 
               <div className="flex w-12 flex-col items-center gap-5 pb-1">
-                <button onClick={() => setLiked((prev) => ({ ...prev, [post.id]: !prev[post.id] }))} className="flex flex-col items-center gap-1 transition-transform active:scale-90">
-                  <Heart size={26} fill={liked[post.id] ? "currentColor" : "none"} className={liked[post.id] ? "text-red-400" : ""}/>
+                <button onClick={() => toggleLike(post.id)} className="flex flex-col items-center gap-1 transition-transform active:scale-90">
+                  <Heart size={26} fill={engagement.liked ? "currentColor" : "none"} className={liked[post.id] ? "text-red-400" : ""}/>
                   <span className="text-[10px] font-bold">{formatNumber(post.likes + (liked[post.id] ? 1 : 0))}</span>
                 </button>
                 <button onClick={() => setCommentOpen(post.id)} className="flex flex-col items-center gap-1">
@@ -101,8 +101,8 @@ export function WatchScreen() {
                   <Star size={25} fill={rated[post.id] ? "currentColor" : "none"} />
                   <span className="text-[10px] font-bold">{rated[post.id] ? rated[post.id] + "/10" : "Rate"}</span>
                 </button>
-                <button onClick={() => setSaved((prev) => ({ ...prev, [post.id]: !prev[post.id] }))} className="flex flex-col items-center gap-1">
-                  <Bookmark size={24} fill={saved[post.id] ? "currentColor" : "none"}/>
+                <button onClick={() => toggleSave(post.id)} className="flex flex-col items-center gap-1">
+                  <Bookmark size={24} fill={engagement.saved ? "currentColor" : "none"}/>
                   <span className="text-[10px] font-bold">{formatNumber(post.saves + (saved[post.id] ? 1 : 0))}</span>
                 </button>
                 <button onClick={async () => {
@@ -129,7 +129,7 @@ export function WatchScreen() {
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {[1,2,3,4,5,6,7,8,9,10].map((score) => (
-                      <button key={score} onClick={() => { setRated((prev) => ({ ...prev, [post.id]: score })); setRatingOpen(null); setRatingMessage(`Rated ${score}/10`); }} className="grid aspect-square place-items-center rounded-2xl bg-white/5 text-sm font-black text-white hover:bg-pop-500 active:scale-95">
+                      <button key={score} onClick={() => { setRated((prev) => ({ ...prev, [post.id]: score })); ratePost(post.id, score); setRatingOpen(null); setRatingMessage(`Rated ${score}/10`); }} className="grid aspect-square place-items-center rounded-2xl bg-white/5 text-sm font-black text-white hover:bg-pop-500 active:scale-95">
                         {score}
                       </button>
                     ))}
@@ -165,8 +165,8 @@ export function WatchScreen() {
                 )}
               </AnimatePresence>
             </div>
-          </section>
-        ))}
+          </section>;
+        })}
       </div>
     </div>
   );
