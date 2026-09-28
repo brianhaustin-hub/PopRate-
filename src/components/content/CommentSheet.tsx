@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AtSign, ChevronDown, ChevronUp, Filter, Heart, Image as ImageIcon, MessageCircle, Search, Send, Smile, Sparkles, Star, TrendingUp, X } from 'lucide-react';
-import { addUnifiedComment, toggleCommentLike, useContentComments } from '@/data/contentComments';
+import { AtSign, Check, ChevronDown, ChevronUp, Copy, Filter, Flag, Heart, Image as ImageIcon, MessageCircle, MoreHorizontal, Search, Send, Smile, Sparkles, Star, TrendingUp, UserPlus, X } from 'lucide-react';
+import { addUnifiedComment, followCommentAuthor, getCommentMentionSuggestions, reportComment, toggleCommentLike, useContentComments } from '@/data/contentComments';
 import { Avatar } from '@/components/ui/Avatar';
 
 type CommentSheetProps = {
@@ -32,6 +33,7 @@ function timeLabel(value: string) {
 }
 
 export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast }: CommentSheetProps) {
+  const router = useRouter();
   const comments = useContentComments(contentId, kind);
   const [expanded, setExpanded] = useState(false);
   const [sort, setSort] = useState<'newest' | 'top'>('newest');
@@ -43,6 +45,8 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
   const [stickerTab, setStickerTab] = useState<'trending' | 'reactions' | 'hype' | 'love' | 'saved'>('trending');
   const [stickerQuery, setStickerQuery] = useState('');
   const [favoriteStickers, setFavoriteStickers] = useState<string[]>(['🔥','😂','❤️']);
+  const [actionFor, setActionFor] = useState<string | null>(null);
+  const [copiedComment, setCopiedComment] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -51,6 +55,7 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
       setComposer('');
       setStickerOpen(false);
       setReplyTo(null);
+      setActionFor(null);
     }
   }, [open]);
 
@@ -60,10 +65,14 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
 
   if (!open) return null;
 
-  const ordered = [...comments].filter(item => !item.parentId || expandedReplies.has(item.parentId)).sort((a, b) => {
-    if (sort === 'top') return b.likes - a.likes;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  const mentionMatch = composer.match(/(?:^|\s)@([a-zA-Z0-9._-]*)$/);
+  const mentionSuggestions = mentionMatch ? getCommentMentionSuggestions(mentionMatch[1]) : [];
+
+  const ordered = [...comments]
+    .filter(item => !item.parentId || expandedReplies.has(item.parentId))
+    .sort((a, b) => sort === 'top'
+      ? b.likes - a.likes
+      : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const submit = () => {
     const value = composer.trim();
@@ -76,6 +85,23 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
     if (replyTo) setExpandedReplies(previous => new Set(previous).add(replyTo.id));
     setReplyTo(null);
     onToast?.('Comment posted');
+  };
+
+  const insertMention = (username: string) => {
+    setComposer(previous => previous.replace(/@[a-zA-Z0-9._-]*$/, '@' + username + ' '));
+    textareaRef.current?.focus();
+  };
+
+  const copyComment = async (commentId: string, text: string) => {
+    try {
+      await navigator.clipboard?.writeText(text);
+      setCopiedComment(commentId);
+      setActionFor(null);
+      onToast?.('Comment copied');
+      window.setTimeout(() => setCopiedComment(null), 1400);
+    } catch {
+      onToast?.('Could not copy comment');
+    }
   };
 
   return (
@@ -112,15 +138,16 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
           ) : (
             <div className="space-y-5">
               {ordered.map(item => (
-                <article key={item.id} className={'flex gap-3 ' + (item.parentId ? 'ml-10' : '')}>
-                  <button className="shrink-0 pt-0.5" aria-label={'Open @' + item.author.username}>
+                <article key={item.id} className={'relative flex gap-3 ' + (item.parentId ? 'ml-10' : '')}>
+                  <button onClick={() => item.authorId && router.push('/user/' + item.author.username)} className="shrink-0 pt-0.5" aria-label={'Open @' + item.author.username}>
                     <Avatar src={item.author.avatar} alt={item.author.displayName} size="sm" />
                   </button>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-1.5">
-                      <span className="truncate text-xs font-black">{item.author.displayName}</span>
-                      <span className="truncate text-[10px] text-white/30">@{item.author.username}</span>
+                      <button onClick={() => item.authorId && router.push('/user/' + item.author.username)} className="truncate text-xs font-black hover:text-pop-300">{item.author.displayName}</button>
+                      <button onClick={() => item.authorId && router.push('/user/' + item.author.username)} className="truncate text-[10px] text-white/30 hover:text-white/55">@{item.author.username}</button>
                       <span className="ml-auto shrink-0 text-[10px] text-white/25">{timeLabel(item.createdAt)}</span>
+                      <button onClick={() => setActionFor(previous => previous === item.id ? null : item.id)} className="grid h-6 w-6 place-items-center rounded-full text-white/25 hover:bg-white/[.05] hover:text-white/55" aria-label="Comment actions"><MoreHorizontal size={15}/></button>
                     </div>
                     {item.text && <p className="mt-1 text-sm leading-5 text-white/75 break-words">{item.text}</p>}
                     {item.sticker && <div className="mt-2 inline-grid h-11 w-11 place-items-center rounded-2xl border border-white/10 bg-white/[.06] text-2xl shadow-inner">{item.sticker}</div>}
@@ -130,7 +157,16 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
                       </button>
                       <button onClick={() => { setReplyTo({ id: item.id, username: item.author.username }); setExpanded(true); }} className="hover:text-white/70">Reply</button>
                       {!!item.replies && <button onClick={() => setExpandedReplies(previous => { const next = new Set(previous); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })} className="flex items-center gap-1 hover:text-white/70">{expandedReplies.has(item.id) ? 'Hide' : 'View'} {item.replies} {item.replies === 1 ? 'reply' : 'replies'} {expandedReplies.has(item.id) ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}</button>}
+                      {item.authorId && item.authorId !== '1' && <button onClick={() => { followCommentAuthor(item.authorId); onToast?.('Follow updated'); }} className="ml-auto flex items-center gap-1 hover:text-pop-300"><UserPlus size={12}/>Follow</button>}
                     </div>
+                    <AnimatePresence>
+                      {actionFor === item.id && (
+                        <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} className="mt-2 flex flex-wrap gap-1.5">
+                          <button onClick={() => copyComment(item.id, item.text)} className="flex items-center gap-1.5 rounded-full bg-white/[.06] px-2.5 py-1.5 text-[10px] font-bold text-white/55">{copiedComment === item.id ? <Check size={11}/> : <Copy size={11}/>}Copy</button>
+                          <button onClick={() => { reportComment(item.id); setActionFor(null); onToast?.('Comment reported'); }} className="flex items-center gap-1.5 rounded-full bg-white/[.06] px-2.5 py-1.5 text-[10px] font-bold text-white/55"><Flag size={11}/>Report</button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </article>
               ))}
@@ -139,6 +175,18 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
         </div>
 
         <div className="relative shrink-0 border-t border-white/10 bg-surface-950/98 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl">
+          {mentionSuggestions.length > 0 && (
+            <div className="absolute bottom-full left-4 right-4 mb-2 overflow-hidden rounded-2xl border border-white/10 bg-surface-900 p-2 shadow-2xl">
+              <div className="px-2 pb-1 text-[9px] font-black uppercase tracking-[.16em] text-white/25">Mention someone</div>
+              {mentionSuggestions.map(user => (
+                <button key={user.id} onClick={() => insertMention(user.username)} className="flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left hover:bg-white/[.05]">
+                  <Avatar src={user.avatar} alt={user.displayName} size="sm" />
+                  <span className="min-w-0"><strong className="block truncate text-xs">{user.displayName}</strong><span className="block truncate text-[10px] text-white/30">@{user.username}</span></span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {replyTo && <div className="mb-2 flex items-center justify-between rounded-2xl bg-white/[.04] px-3 py-2 text-[10px] text-white/45"><span>Replying to <strong className="text-white/70">@{replyTo.username}</strong></span><button onClick={() => setReplyTo(null)} className="text-white/35"><X size={13}/></button></div>}
 
           <AnimatePresence>
@@ -163,7 +211,6 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
                       <Icon size={12}/>{label}
                     </button>
                   ))}
-                  <button onClick={() => setStickerTab('saved')} className="ml-auto flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-black text-white/40"><Star size={12}/> Saved</button>
                 </div>
                 <div className="max-h-52 overflow-y-auto px-3 pb-3">
                   <div className="grid grid-cols-6 gap-1.5">
