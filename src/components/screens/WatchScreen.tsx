@@ -7,8 +7,7 @@ import { getUnifiedVideos } from '@/data/content';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { formatNumber } from '@/lib/utils';
 import { rateUnifiedContent, useUnifiedEngagement } from '@/data/contentEngagement';
-import { addChallengeMemoryComment } from '@/data/challengeMemories';
-import { addPostComment, useContentComments } from '@/data/contentComments';
+import { addUnifiedComment, useContentComments } from '@/data/contentComments';
 import { motion, AnimatePresence } from 'framer-motion';
 import { recordBehavior } from '@/data/behaviorStore';
 import { subscribePublishedContent } from '@/data/contentCreation';
@@ -83,13 +82,7 @@ function WatchVideoCard({
   const submitComment = () => {
     const value = comment.trim();
     if (!value) return;
-    if (content.kind === 'challenge_memory') {
-      const memoryId = content.challengeId ?? content.id;
-      addChallengeMemoryComment(memoryId, value);
-    } else {
-      addPostComment(content.id, value);
-    }
-    recordBehavior({ type: 'comment', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username });
+    addUnifiedComment(content.kind === 'challenge_memory' ? (content.challengeId ?? content.id) : content.id, content.kind, value);
     setComment('');
     setCommentOpen(null);
     onToast('Comment posted');
