@@ -7,14 +7,23 @@ const days: Day[] = [];
 const listeners = new Set<() => void>();
 
 function dayKey(date = new Date()) {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return year + '-' + month + '-' + day;
 }
-function emit() { listeners.forEach(listener => listener()); }
+
+function emit() {
+  listeners.forEach(listener => listener());
+}
 
 function ensureToday() {
   const key = dayKey();
-  if (!days.some(day => day.key === key)) days.push({ key, actions: 0 });
-  return days.find(day => day.key === key)!;
+  const existing = days.find(day => day.key === key);
+  if (existing) return existing;
+  const created = { key, actions: 0 };
+  days.push(created);
+  return created;
 }
 
 export function recordDailyAction() {
@@ -24,16 +33,19 @@ export function recordDailyAction() {
 
 export function getMomentum() {
   ensureToday();
-  const sorted = [...days].sort((a, b) => a.key.localeCompare(b.key));
+  const todayKey = dayKey();
   let streak = 0;
-  let cursor = new Date();
-  for (let i = sorted.length - 1; i >= 0; i--) {
-    const expected = dayKey(cursor);
-    if (sorted[i].key !== expected || sorted[i].actions === 0) break;
+  let streakCursor = new Date();
+
+  while (true) {
+    const key = dayKey(streakCursor);
+    const day = days.find(item => item.key === key);
+    if (!day || day.actions === 0) break;
     streak += 1;
-    cursor.setUTCDate(cursor.getUTCDate() - 1);
+    streakCursor.setDate(streakCursor.getDate() - 1);
   }
-  const today = days.find(day => day.key === dayKey());
+
+  const today = days.find(day => day.key === todayKey);
   return { streak, todayActions: today?.actions ?? 0 };
 }
 
@@ -43,5 +55,9 @@ export function subscribeMomentum(listener: () => void) {
 }
 
 export function useMomentumVersion() {
-  return useSyncExternalStore(subscribeMomentum, () => days.reduce((sum, day) => sum + day.actions, 0), () => 0);
+  return useSyncExternalStore(
+    subscribeMomentum,
+    () => days.reduce((sum, day) => sum + day.actions, 0),
+    () => 0,
+  );
 }
