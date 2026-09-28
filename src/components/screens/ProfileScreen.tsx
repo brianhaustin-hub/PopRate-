@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { users } from '@/data/mock';
 import { Avatar } from '@/components/ui/Avatar';
@@ -11,6 +11,7 @@ import {
   MoreHorizontal, Settings, Share2, Star, Trophy, UserPlus,
 } from 'lucide-react';
 import { ProfileTab } from '@/types';
+import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challengeMemories';
 
 const user = users[0];
 
@@ -26,6 +27,9 @@ export function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
   const [following, setFollowing] = useState(user.isFollowing);
   const [copied, setCopied] = useState(false);
+  const [challengeMemories, setChallengeMemories] = useState(getChallengeMemories());
+
+  useEffect(() => subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories())), []);
 
   const copyProfile = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
@@ -129,15 +133,40 @@ export function ProfileScreen() {
 
           <div className="px-4 pt-4">
             {activeTab === 'posts' && (
-              <div className="grid grid-cols-3 gap-1.5">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <button key={i} className="aspect-square rounded-xl overflow-hidden bg-surface-900 relative group">
-                    <img src={'https://picsum.photos/seed/profile-' + i + '/500/500'} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                    <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
-                      <span className="text-[10px] text-white font-bold">★ {(8 + (i % 3) / 2).toFixed(1)}</span>
+              <div className="space-y-4">
+                {challengeMemories.map((memory) => (
+                  <article key={memory.id} className="overflow-hidden rounded-3xl border border-pop-500/15 bg-gradient-to-br from-pop-500/10 to-transparent">
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-[.16em] text-pop-300">Challenge memory</p>
+                        <p className="mt-1 text-sm font-black text-white">{memory.title}</p>
+                      </div>
+                      <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/45">{memory.category}</span>
                     </div>
-                  </button>
+                    <div className="grid grid-cols-2 gap-1 bg-black">
+                      {[memory.creatorMedia, memory.opponentMedia].map((media, i) => (
+                        <div key={i} className="relative aspect-[4/5] overflow-hidden">
+                          {media.type === 'video' ? <video src={media.url} poster={media.thumbnail} muted playsInline loop autoPlay className="h-full w-full object-cover" /> : <img src={media.url} alt="" className="h-full w-full object-cover" />}
+                          <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-1 text-[9px] font-black text-white">{media.type === 'video' ? 'VIDEO' : 'PHOTO'}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3">
+                      <span className="text-xs text-white/45">{memory.votesA + memory.votesB} votes · expires in 25h</span>
+                      <span className="text-xs font-bold text-pop-300">Arena result</span>
+                    </div>
+                  </article>
                 ))}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <button key={i} className="aspect-square rounded-xl overflow-hidden bg-surface-900 relative group">
+                      <img src={'https://picsum.photos/seed/profile-' + i + '/500/500'} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
+                        <span className="text-[10px] text-white font-bold">★ {(8 + (i % 3) / 2).toFixed(1)}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
