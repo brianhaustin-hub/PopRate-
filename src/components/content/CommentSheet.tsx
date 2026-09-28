@@ -34,6 +34,7 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
   const [stickerOpen, setStickerOpen] = useState(false);
   const [selectedSticker, setSelectedSticker] = useState<string>();
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
 
   if (!open) return null;
 
-  const ordered = [...comments].sort((a, b) => {
+  const ordered = [...comments].filter(item => !item.parentId || expandedReplies.has(item.parentId)).sort((a, b) => {
     if (sort === 'top') return b.likes - a.likes;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
@@ -64,6 +65,7 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
     setComposer('');
     setSelectedSticker(undefined);
     setStickerOpen(false);
+    if (replyTo) setExpandedReplies(previous => new Set(previous).add(replyTo.id));
     setReplyTo(null);
     onToast?.('Comment posted');
   };
@@ -119,7 +121,7 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
                         <Heart size={14} fill={item.liked ? 'currentColor' : 'none'} />{item.likes}
                       </button>
                       <button onClick={() => { setReplyTo({ id: item.id, username: item.author.username }); setExpanded(true); }} className="hover:text-white/70">Reply</button>
-                      {!!item.replies && <button onClick={() => setSort('top')} className="flex items-center gap-1 hover:text-white/70">View {item.replies} {item.replies === 1 ? 'reply' : 'replies'} <ChevronDown size={12}/></button>}
+                      {!!item.replies && <button onClick={() => setExpandedReplies(previous => { const next = new Set(previous); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; })} className="flex items-center gap-1 hover:text-white/70">{expandedReplies.has(item.id) ? 'Hide' : 'View'} {item.replies} {item.replies === 1 ? 'reply' : 'replies'} {expandedReplies.has(item.id) ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}</button>}
                     </div>
                   </div>
                 </article>
