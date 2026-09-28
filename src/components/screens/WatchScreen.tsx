@@ -82,6 +82,25 @@ export function WatchScreen() {
                 <button className="flex flex-col items-center gap-1"><Share2 size={23}/><span className="text-[10px] font-bold">{formatNumber(post.shares)}</span></button>
                 <button onClick={() => router.push('/challenge/new')} className="grid h-11 w-11 place-items-center rounded-full bg-white text-black shadow-xl" aria-label="Create challenge"><Swords size={20}/></button>
               </div>
+
+              {ratingOpen === post.id && (
+                <div className="absolute inset-x-3 bottom-24 z-30 rounded-3xl border border-white/10 bg-surface-950/95 p-4 shadow-2xl backdrop-blur-xl">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-black text-white">Rate this Pop</p>
+                      <p className="text-[11px] text-white/45">Tap a score from 1 to 10</p>
+                    </div>
+                    <button onClick={() => setRatingOpen(null)} className="text-xs font-bold text-white/50">Close</button>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1,2,3,4,5,6,7,8,9,10].map((score) => (
+                      <button key={score} onClick={() => { setRated((prev) => ({ ...prev, [post.id]: score })); setRatingOpen(null); }} className="grid aspect-square place-items-center rounded-2xl bg-white/5 text-sm font-black text-white hover:bg-pop-500 active:scale-95">
+                        {score}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         ))}
