@@ -70,7 +70,7 @@ export function useContentComments(contentId: string, kind: 'post' | 'challenge_
   );
 }
 
-export function addPostComment(postId: string, text: string) {
+export function addPostComment(postId: string, text: string, sticker?: string) {
   const value = text.trim();
   if (!value) return;
   const list = state.get(postId) ?? [];
