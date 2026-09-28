@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { getChallengeWorkflow, challengeProgress } from '@/data/challengeWorkflow';
+import { getChallengeWorkflow, challengeProgress, advanceChallenge, setChallengeStatus } from '@/data/challengeWorkflow';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Clock3, Copy, Link2, ShieldAlert, Swords, Trophy, UserPlus, X, Zap } from 'lucide-react';
 
@@ -30,6 +30,23 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
   const current = useMemo(() => states.find(item => item.id === state)!, [state]);
   const terminal = ['declined', 'cancelled', 'expired'].includes(state);
   const progress = challengeProgress(state === 'waiting' ? 'waiting_for_opponent' : state === 'closed' ? 'voting_closed' : state);
+
+  const syncState = (nextState: State) => {
+    if (workflow) {
+      const mapped = nextState === 'waiting' ? 'waiting_for_opponent' : nextState === 'closed' ? 'voting_closed' : nextState;
+      setChallengeStatus(challengeId, mapped as import('@/types').ChallengeStatus);
+    }
+    setState(nextState);
+  };
+
+  const advance = () => {
+    if (!workflow) return;
+    const updated = advanceChallenge(challengeId);
+    if (updated) {
+      const mapped: State = updated.status === 'waiting_for_opponent' ? 'waiting' : updated.status === 'voting_closed' ? 'closed' : updated.status as State;
+      setState(mapped);
+    }
+  };
 
   const copyInvite = async () => {
     if (navigator.clipboard) await navigator.clipboard.writeText(window.location.href);
@@ -91,14 +108,20 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
         <div className="mt-6 rounded-2xl border border-white/[.06] p-4">
           <p className="text-[10px] font-black uppercase tracking-[.15em] text-white/30">Prototype state controls</p>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {states.slice(0, 6).map(item => <button key={item.id} onClick={() => setState(item.id)} className={`shrink-0 rounded-full px-3 py-2 text-[10px] font-bold ${state === item.id ? 'bg-white text-black' : 'bg-white/5 text-white/45'}`}>{item.label}</button>)}
+            {states.slice(0, 6).map(item => <button key={item.id} onClick={() => syncState(item.id) className={`shrink-0 rounded-full px-3 py-2 text-[10px] font-bold ${state === item.id ? 'bg-white text-black' : 'bg-white/5 text-white/45'}`}>{item.label}</button>)}
           </div>
           <div className="mt-2 flex gap-2">
             {states.slice(6).map(item => <button key={item.id} onClick={() => setState(item.id)} className="rounded-full bg-white/5 px-3 py-2 text-[10px] font-bold text-white/40">{item.label}</button>)}
           </div>
         </div>
 
-        <button onClick={() => router.push(state === 'result' ? '/challenge/'+challengeId+'/result' : '/challenges')} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/[.06] text-sm font-bold text-white/70">
+        {!terminal && state !== 'result' && state !== 'waiting' && (
+          <button onClick={advance} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-pop-500 text-sm font-black text-white shadow-pop">
+            {state === 'ready' ? <><Zap size={16}/> Launch arena</> : state === 'live' ? <><Trophy size={16}/> Close voting</> : <><Trophy size={16}/> Publish result</>}
+          </button>
+        )}
+
+        <button onClick={() => router.push(state === 'result' ? '/challenge/'+challengeId+'/result' : state === 'live' ? '/challenge/'+challengeId+'/live' : '/challenges')} className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white/[.06] text-sm font-bold text-white/70">
           {state === 'result' ? <><Trophy size={16}/> View final result</> : <><Swords size={16}/> Back to arena</>}
         </button>
       </main>
