@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { getUnifiedVideos } from '@/data/content';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { formatNumber } from '@/lib/utils';
-import { useUnifiedEngagement } from '@/data/contentEngagement';
+import { rateUnifiedContent, useUnifiedEngagement } from '@/data/contentEngagement';
+import { addChallengeMemoryComment } from '@/data/challengeMemories';
 import { addPostComment, useContentComments } from '@/data/contentComments';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -60,7 +61,6 @@ function WatchVideoCard({
     if (!value) return;
     if (content.kind === 'challenge_memory') {
       const memoryId = content.challengeId ?? content.id;
-      const { addChallengeMemoryComment } = require('@/data/challengeMemories') as typeof import('@/data/challengeMemories');
       addChallengeMemoryComment(memoryId, value);
     } else {
       addPostComment(content.id, value);
@@ -176,26 +176,9 @@ export function WatchScreen() {
     const content=videos.find(item=>item.id===id);
     if(!content)return;
     const engagementId=content.kind === 'challenge_memory' ? (content.challengeId ?? content.id) : content.id;
-    // The hook owns the storage; dispatch through a small eventless adapter below.
-    window.dispatchEvent(new CustomEvent('poprate:rate', { detail: { kind: content.kind, id: engagementId, score } }));
+    rateUnifiedContent(content.kind, engagementId, score);
     setRatingMessage(`Rated ${score}/10`);
   };
-
-  useEffect(() => {
-    const handler=(event: Event)=>{
-      const detail=(event as CustomEvent<{kind:'post'|'challenge_memory';id:string;score:number}>).detail;
-      if(detail.kind==='post'){
-        const { ratePost } = require('@/data/postEngagement') as typeof import('@/data/postEngagement');
-        ratePost(detail.id, detail.score);
-      } else {
-        // Memory ratings are handled by a tiny module-level helper exported below.
-        const { rateUnifiedContent } = require('@/data/contentEngagement') as typeof import('@/data/contentEngagement');
-        rateUnifiedContent(detail.kind, detail.id, detail.score);
-      }
-    };
-    window.addEventListener('poprate:rate', handler);
-    return()=>window.removeEventListener('poprate:rate',handler);
-  },[]);
 
   if(!videos.length)return <div className="grid h-[100dvh] place-items-center bg-black px-6 text-center text-white"><div><p className="text-xl font-black">No videos yet</p><button onClick={()=>router.back()} className="mt-4 rounded-full bg-white px-5 py-2 text-sm font-bold text-black">Go back</button></div></div>;
 
