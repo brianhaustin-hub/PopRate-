@@ -16,39 +16,15 @@ function emit() {
 }
 
 export function isFollowing(userId: string) {
-  return followed.has(userId);
+  return userId !== currentUserId && followed.has(userId);
 }
 
-export function toggleFollow(userId: string) {
-  if (userId === currentUserId) return false;
+export function getFollowingCount() {
+  return followed.size;
+}
 
-  const wasFollowing = followed.has(userId);
-  if (wasFollowing) followed.delete(userId);
-  else followed.add(userId);
-
-  const next = followed.has(userId);
-  const user = users.find(item => item.id === userId);
-
-  if (user) {
-    recordBehavior({
-      type: next ? 'follow' : 'unfollow',
-      creatorUsername: user.username,
-      dedupeKey: next ? undefined : undefined,
-    });
-
-    if (next) {
-      addActivity({
-        type: 'follow',
-        title: 'You followed ' + user.displayName,
-        message: 'Their PopRates will shape your feed.',
-        image: user.avatar,
-        href: '/user/' + user.username,
-      });
-    }
-  }
-
-  emit();
-  return next;
+export function getFollowerCount(userId = currentUserId) {
+  return users.find(user => user.id === userId)?.followers ?? 0;
 }
 
 export function getFollowedUserIds() {
@@ -57,6 +33,37 @@ export function getFollowedUserIds() {
 
 export function getFollowedUsernames() {
   return new Set(users.filter(user => followed.has(user.id)).map(user => user.username));
+}
+
+export function toggleFollow(userId: string) {
+  if (userId === currentUserId) return false;
+
+  const user = users.find(item => item.id === userId);
+  if (!user) return false;
+
+  const wasFollowing = followed.has(userId);
+  if (wasFollowing) followed.delete(userId);
+  else followed.add(userId);
+
+  const next = followed.has(userId);
+  recordBehavior({
+    type: next ? 'follow' : 'unfollow',
+    contentId: user.id,
+    creatorUsername: user.username,
+  });
+
+  if (next) {
+    addActivity({
+      type: 'follow',
+      title: 'You followed ' + user.displayName,
+      message: 'Their PopRates will shape your feed.',
+      image: user.avatar,
+      href: '/user/' + user.username,
+    });
+  }
+
+  emit();
+  return next;
 }
 
 export function subscribeSocialGraph(listener: () => void) {
