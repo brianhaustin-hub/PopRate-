@@ -24,7 +24,7 @@ export function toggleFollow(userId: string) {
   const user = users.find(item => item.id === userId);
   if (user) {
     recordBehavior({
-      type: next ? 'follow' : 'unlike',
+      type: next ? 'follow' : 'unfollow',
       creatorUsername: user.username,
       dedupeKey: next ? undefined : undefined,
     });
