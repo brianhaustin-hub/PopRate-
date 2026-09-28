@@ -11,11 +11,13 @@ import { Search, Flame, TrendingUp, Users, Palette, Trophy, Star, ArrowUpRight, 
 import { useRouter } from 'next/navigation';
 import { DiscoverTab } from '@/types';
 import { MediaFrame } from '@/components/ui/MediaFrame';
+import { getUnifiedFeed } from '@/data/content';
 
 export function DiscoverScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<DiscoverTab>('trending');
   const [search, setSearch] = useState('');
+  const unifiedFeed = getUnifiedFeed();
 
   const renderContent = () => {
     switch (activeTab) {
@@ -26,20 +28,20 @@ export function DiscoverScreen() {
               <Flame size={20} className="text-orange-500" />
               <h2 className="text-xl font-bold text-white">Trending Now</h2>
             </div>
-            {posts.slice(0, 5).map((post, i) => (
-              <button key={post.id} onClick={() => router.push(`/post/${post.id}`)} className="w-full text-left flex gap-3 p-3 bg-surface-900 rounded-xl border border-white/5 mb-2 hover:border-white/10 transition-colors">
+            {unifiedFeed.slice(0, 5).map((content, i) => (
+              <button key={content.id} onClick={() => router.push(`/post/${content.id}`)} className="w-full text-left flex gap-3 p-3 bg-surface-900 rounded-xl border border-white/5 mb-2 hover:border-white/10 transition-colors">
                 <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-                  <MediaFrame media={{ type: post.mediaType ?? "image", url: post.mediaUrl ?? post.image, thumbnail: post.thumbnail }} alt="" className="w-full h-full" autoPlay={post.mediaType === "video"} loop={post.mediaType === "video"} muted />
+                  <MediaFrame media={{ type: content.media[0]?.type ?? "image", url: content.media[0]?.url ?? content.image, thumbnail: content.media[0]?.thumbnail }} alt="" className="w-full h-full" autoPlay={post.mediaType === "video"} loop={post.mediaType === "video"} muted />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-white truncate">{post.caption.slice(0, 50)}...</p>
-                  <p className="text-xs text-white/40 mt-1">{post.creator.displayName}</p>
+                  <p className="font-semibold text-sm text-white truncate">{content.caption.slice(0, 50)}...</p>
+                  <p className="text-xs text-white/40 mt-1">{content.creator.name}</p>
                   <div className="flex items-center gap-3 mt-2">
-                    <span className="text-xs text-pop-500">★ {post.rating}</span>
-                    <span className="text-xs text-white/30">{formatNumber(post.likes)} likes</span>
+                    <span className="text-xs text-pop-500">★ {content.rating}</span>
+                    <span className="text-xs text-white/30">{formatNumber(content.likes)} likes</span>
                   </div>
                 </div>
-                <Badge variant="accent">{post.category}</Badge>
+                <Badge variant="accent">{content.category}</Badge>
               </div>
             ))}
           </div>
@@ -53,14 +55,14 @@ export function DiscoverScreen() {
               <h2 className="text-xl font-bold text-white">Rising Stars</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {posts.slice(0, 6).map((post, i) => (
-                <button key={post.id} onClick={() => router.push(`/post/${post.id}`)} className="w-full text-left overflow-hidden rounded-xl bg-surface-900 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+              {unifiedFeed.slice(0, 6).map((content, i) => (
+                <button key={content.id} onClick={() => router.push(`/post/${content.id}`)} className="w-full text-left overflow-hidden rounded-xl bg-surface-900 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
                   <div className="aspect-square relative">
                     <MediaFrame media={{ type: post.mediaType ?? "image", url: post.mediaUrl ?? post.image, thumbnail: post.thumbnail }} alt="" className="w-full h-full" autoPlay={post.mediaType === "video"} loop={post.mediaType === "video"} muted />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-2 left-2 right-2">
-                      <p className="text-white font-semibold text-xs">{post.creator.displayName}</p>
-                      <p className="text-pop-500 text-xs font-bold">★ {post.rating}</p>
+                      <p className="text-white font-semibold text-xs">{content.creator.name}</p>
+                      <p className="text-pop-500 text-xs font-bold">★ {content.rating}</p>
                     </div>
                   </div>
                 </button>
