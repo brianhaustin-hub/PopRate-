@@ -23,6 +23,7 @@ type MemoryRating = {
 
 const memoryRatings = new Map<string, MemoryRating>();
 const ratingListeners = new Set<() => void>();
+const EMPTY_MEMORY_RATING: MemoryRating = { count: 0, average: 0 };
 
 function emitRating() {
   ratingListeners.forEach((listener) => listener());
@@ -42,6 +43,25 @@ function getMemoryRating(challengeId: string): MemoryRating {
   return value;
 }
 
+export function rateUnifiedContent(kind: 'post' | 'challenge_memory', id: string, score: number) {
+  if (kind === 'post') {
+    ratePost(id, score);
+    return;
+  }
+  const current = getMemoryRating(id);
+  const previous = current.rating;
+  const nextCount = previous == null ? current.count + 1 : current.count;
+  const nextAverage = previous == null
+    ? ((current.average * current.count) + score) / Math.max(nextCount, 1)
+    : ((current.average * current.count) - previous + score) / Math.max(current.count, 1);
+  memoryRatings.set(id, {
+    rating: score,
+    count: nextCount,
+    average: Number(nextAverage.toFixed(1)),
+  });
+  emitRating();
+}
+
 export function useUnifiedEngagement(kind: 'post' | 'challenge_memory', id: string) {
   const postEngagement = usePostEngagement(id);
   const memory = useSyncExternalStore(
@@ -54,8 +74,8 @@ export function useUnifiedEngagement(kind: 'post' | 'challenge_memory', id: stri
       ratingListeners.add(listener);
       return () => ratingListeners.delete(listener);
     },
-    () => kind === 'challenge_memory' ? getMemoryRating(id) : { count: 0, average: 0 },
-    () => kind === 'challenge_memory' ? getMemoryRating(id) : { count: 0, average: 0 },
+    () => kind === 'challenge_memory' ? getMemoryRating(id) : EMPTY_MEMORY_RATING,
+    () => kind === 'challenge_memory' ? getMemoryRating(id) : EMPTY_MEMORY_RATING,
   );
 
   if (kind === 'challenge_memory') {
