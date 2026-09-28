@@ -55,7 +55,7 @@ export function UnifiedContentCard({ content, compact = false }: { content: Unif
         <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
           <button type="button" onClick={engagement.toggleLike} className={'inline-flex items-center gap-1.5 text-xs ' + (engagement.liked ? 'text-red-400' : 'text-white/50')}><Heart size={17} fill={engagement.liked ? 'currentColor' : 'none'} /> {formatNumber(engagement.likes)}</button>
           <button type="button" onClick={() => router.push('/post/' + content.id)} className="inline-flex items-center gap-1.5 text-xs text-white/50"><MessageCircle size={17} /> {formatNumber(content.comments)}</button>
-          <button type="button" onClick={share} className={'inline-flex items-center gap-1.5 text-xs ' + (shared ? 'text-pop-400' : 'text-white/50')}><Share2 size={17} /> {shared ? 'Shared' : formatNumber(content.shares + engagement.shares)}</button>
+          <button type="button" onClick={share} className={'inline-flex items-center gap-1.5 text-xs ' + (shared ? 'text-pop-400' : 'text-white/50')}><Share2 size={17} /> {shared ? 'Shared' : formatNumber(content.kind === 'challenge_memory' ? engagement.shares : content.shares)}</button>
           <button type="button" onClick={engagement.toggleSave} className={'inline-flex items-center gap-1.5 text-xs ' + (engagement.saved ? 'text-pop-400' : 'text-white/50')}><Bookmark size={17} fill={engagement.saved ? 'currentColor' : 'none'} /> {formatNumber(engagement.saves)}</button>
         </div>
       </div>
