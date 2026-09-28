@@ -302,6 +302,50 @@ posts.push({
   createdAt: '2026-09-28T08:00:00Z',
 });
 
+
+posts.push(
+  {
+    id: 'v2',
+    creator: users[6],
+    image: 'https://picsum.photos/seed/fashion-video/800/1200',
+    mediaType: 'video',
+    mediaUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    thumbnail: 'https://picsum.photos/seed/fashion-video/800/1200',
+    caption: 'Street style in motion. Which detail catches your eye? 👀 #fashion #streetstyle',
+    tags: ['fashion', 'streetstyle', 'video'],
+    category: 'Fashion',
+    rating: 8.8,
+    ratingCount: 1430,
+    likes: 12100,
+    comments: 288,
+    shares: 940,
+    saves: 5100,
+    isLiked: false,
+    isSaved: false,
+    createdAt: '2026-09-28T07:20:00Z',
+  },
+  {
+    id: 'v3',
+    creator: users[0],
+    image: 'https://picsum.photos/seed/city-video/800/1200',
+    mediaType: 'video',
+    mediaUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    thumbnail: 'https://picsum.photos/seed/city-video/800/1200',
+    caption: 'A city can change mood in seconds. Rate the vibe. 🌃 #city #visuals',
+    tags: ['city', 'visuals', 'video'],
+    category: 'Visuals',
+    rating: 9.0,
+    ratingCount: 980,
+    likes: 9300,
+    comments: 190,
+    shares: 720,
+    saves: 3900,
+    isLiked: false,
+    isSaved: false,
+    createdAt: '2026-09-28T06:10:00Z',
+  }
+);
+
 export const battles: Battle[] = [
   {
     id: 'b1',
