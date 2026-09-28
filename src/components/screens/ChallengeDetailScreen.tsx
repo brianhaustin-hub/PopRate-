@@ -5,7 +5,7 @@ import { ArrowLeft, Check, ChevronRight, Clock3, Heart, MessageCircle, MoreHoriz
 import { useRouter, useParams } from 'next/navigation';
 import { getChallengeWorkflow } from '@/data/challengeWorkflow';
 import { MediaFrame } from '@/components/ui/MediaFrame';
-import { getChallengeMemory, publishChallengeMemory, removeChallengeMemory } from '@/data/challengeMemories';
+import { addChallengeMemoryComment, getChallengeMemory, publishChallengeMemory, removeChallengeMemory, shareChallengeMemory, toggleChallengeMemoryLike, toggleChallengeMemorySave } from '@/data/challengeMemories';
 
 type Mode = 'live' | 'result';
 
@@ -27,6 +27,8 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const [blocked, setBlocked] = useState(false);
   const [memory, setMemory] = useState(() => getChallengeMemory(challengeId));
   const [memoryChoice, setMemoryChoice] = useState<'profile_and_feed' | 'profile_only' | null>(memory?.placement ?? null);
+  const [memoryLiked, setMemoryLiked] = useState(memory?.liked ?? false);
+  const [memorySaved, setMemorySaved] = useState((memory?.saves ?? 0) > 0);
 
   const isResult = mode === 'result';
   const votesA = workflow?.votesA ?? (isResult ? 642 : 418);
@@ -35,7 +37,7 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const percentA = Math.round((votesA / total) * 100);
   const percentB = 100 - percentA;
 
-  const submitComment = () => { if (!comment.trim()) return; setComments((items) => [...items, comment.trim()]); setComment(''); };
+  const submitComment = () => { if (!comment.trim()) return; setComments((items) => [...items, comment.trim()]); if (memory) addChallengeMemoryComment(challengeId, comment.trim()); setComment(''); };
 
   const submitVote = () => {
     if (!selected || voted || isResult) return;
@@ -132,6 +134,30 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
 
         {isResult && votesA === votesB && (
           <div className="mt-5 rounded-[1.5rem] border border-amber-400/20 bg-amber-400/5 p-5"><div className="flex items-center gap-3"><Trophy className="text-amber-300" size={22}/><div><p className="text-xs font-black uppercase tracking-[.15em] text-amber-300">TIE</p><p className="mt-1 text-xl font-black">The arena ended level.</p></div></div><p className="mt-3 text-sm leading-6 text-white/45">Both sides received the same number of votes. No winner is declared.</p></div>
+        )}
+
+        {isResult && memory && memory.visible && (
+          <section className="mt-5 rounded-[1.5rem] border border-pop-500/15 bg-gradient-to-br from-pop-500/10 to-transparent p-5">
+            <div className="flex items-center justify-between">
+              <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-pop-300">Now a PopRate post</p><p className="mt-1 text-sm font-black">{memory.title}</p></div>
+              <span className="text-[10px] font-bold text-white/35">expires in 25h</span>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-1 overflow-hidden rounded-2xl bg-black">
+              {[memory.creatorMedia, memory.opponentMedia].map((media, i) => media.type === 'video'
+                ? <video key={i} src={media.url} poster={media.thumbnail} muted playsInline loop autoPlay className="aspect-[4/5] w-full object-cover" />
+                : <img key={i} src={media.url} alt="" className="aspect-[4/5] w-full object-cover" />)}
+            </div>
+            <div className="mt-4 flex items-center justify-between text-xs text-white/45">
+              <span>{memory.likes} likes · {memory.comments.length} comments · {memory.shares} shares</span>
+              <span>{memory.votesA + memory.votesB} votes</span>
+            </div>
+            <div className="mt-4 flex items-center gap-2">
+              <button onClick={() => { toggleChallengeMemoryLike(challengeId); setMemoryLiked((v) => !v); }} className="rounded-xl bg-white/5 px-3 py-2 text-xs font-bold">{memoryLiked ? '♥ Liked' : '♡ Like'}</button>
+              <button onClick={() => setCommentsOpen((v) => !v)} className="rounded-xl bg-white/5 px-3 py-2 text-xs font-bold">Comment</button>
+              <button onClick={async () => { shareChallengeMemory(challengeId); const url = window.location.origin + '/challenge/' + challengeId + '/result'; try { if (navigator.share) await navigator.share({ title: memory.title, url }); else await navigator.clipboard.writeText(url); } catch {} }} className="rounded-xl bg-white/5 px-3 py-2 text-xs font-bold">Share</button>
+              <button onClick={() => { toggleChallengeMemorySave(challengeId); setMemorySaved((v) => !v); }} className="rounded-xl bg-white/5 px-3 py-2 text-xs font-bold">{memorySaved ? 'Saved' : 'Save'}</button>
+            </div>
+          </section>
         )}
 
         {isResult && (
