@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, Heart, MessageCircle, MoreHorizontal, Share2, ShieldAlert, Trophy, UserX, Users, Zap, Swords } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { getChallengeWorkflow } from '@/data/challengeWorkflow';
 import { MediaFrame } from '@/components/ui/MediaFrame';
+import { getChallengeMemory, publishChallengeMemory, removeChallengeMemory } from '@/data/challengeMemories';
 
 type Mode = 'live' | 'result';
 
@@ -24,6 +25,8 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [reported, setReported] = useState(false);
   const [blocked, setBlocked] = useState(false);
+  const [memory, setMemory] = useState(() => getChallengeMemory(challengeId));
+  const [memoryChoice, setMemoryChoice] = useState<'profile_and_feed' | 'profile_only' | null>(memory?.placement ?? null);
 
   const isResult = mode === 'result';
   const votesA = workflow?.votesA ?? (isResult ? 642 : 418);
@@ -129,6 +132,53 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
 
         {isResult && votesA === votesB && (
           <div className="mt-5 rounded-[1.5rem] border border-amber-400/20 bg-amber-400/5 p-5"><div className="flex items-center gap-3"><Trophy className="text-amber-300" size={22}/><div><p className="text-xs font-black uppercase tracking-[.15em] text-amber-300">TIE</p><p className="mt-1 text-xl font-black">The arena ended level.</p></div></div><p className="mt-3 text-sm leading-6 text-white/45">Both sides received the same number of votes. No winner is declared.</p></div>
+        )}
+
+        {isResult && (
+          <section className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/[.035] p-5">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-pop-500/10 text-pop-300"><Trophy size={18}/></div>
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-[.16em] text-pop-300">Challenge memory</p>
+                <h2 className="mt-1 text-lg font-black">Keep this moment after the arena closes?</h2>
+                <p className="mt-1 text-xs leading-5 text-white/45">You can keep the finished challenge on your profile and optionally let it reappear in the feed. It automatically disappears after 25 hours unless you remove it sooner.</p>
+              </div>
+            </div>
+            {!memoryChoice ? (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button onClick={() => {
+                  if (!workflow?.opponent) return;
+                  const next = publishChallengeMemory({
+                    challengeId, title: workflow.title, category: workflow.category,
+                    creatorName: workflow.creator.name, creatorUsername: workflow.creator.username, creatorImage: workflow.creator.image,
+                    opponentName: workflow.opponent.name, opponentUsername: workflow.opponent.username, opponentImage: workflow.opponent.image,
+                    creatorMedia: { type: workflow.creatorMediaType ?? 'image', url: workflow.creatorMediaUrl ?? workflow.creatorSide, thumbnail: workflow.creatorThumbnail },
+                    opponentMedia: { type: workflow.opponentMediaType ?? 'image', url: workflow.opponentMediaUrl ?? workflow.opponentSide ?? workflow.opponent.image, thumbnail: workflow.opponentThumbnail },
+                    votesA, votesB, placement: 'profile_and_feed'
+                  });
+                  setMemory(next); setMemoryChoice('profile_and_feed');
+                }} className="rounded-2xl bg-white px-3 py-3 text-xs font-black text-black">Profile + feed</button>
+                <button onClick={() => {
+                  if (!workflow?.opponent) return;
+                  const next = publishChallengeMemory({
+                    challengeId, title: workflow.title, category: workflow.category,
+                    creatorName: workflow.creator.name, creatorUsername: workflow.creator.username, creatorImage: workflow.creator.image,
+                    opponentName: workflow.opponent.name, opponentUsername: workflow.opponent.username, opponentImage: workflow.opponent.image,
+                    creatorMedia: { type: workflow.creatorMediaType ?? 'image', url: workflow.creatorMediaUrl ?? workflow.creatorSide, thumbnail: workflow.creatorThumbnail },
+                    opponentMedia: { type: workflow.opponentMediaType ?? 'image', url: workflow.opponentMediaUrl ?? workflow.opponentSide ?? workflow.opponent.image, thumbnail: workflow.opponentThumbnail },
+                    votesA, votesB, placement: 'profile_only'
+                  });
+                  setMemory(next); setMemoryChoice('profile_only');
+                }} className="rounded-2xl border border-white/10 bg-white/[.06] px-3 py-3 text-xs font-black text-white">Profile only</button>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-emerald-400/15 bg-emerald-400/5 p-3">
+                <p className="text-sm font-bold text-white">{memoryChoice === 'profile_and_feed' ? 'Visible on your profile + feed' : 'Visible on your profile only'}</p>
+                <p className="mt-1 text-[11px] text-white/40">Expires {memory ? new Date(memory.expiresAt).toLocaleString() : 'in 25 hours'}.</p>
+                <button onClick={() => { removeChallengeMemory(challengeId); setMemory(null); setMemoryChoice(null); }} className="mt-3 text-xs font-bold text-red-300">Remove it now</button>
+              </div>
+            )}
+          </section>
         )}
 
         {isResult && votesA !== votesB && (
