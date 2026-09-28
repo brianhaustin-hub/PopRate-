@@ -21,13 +21,18 @@ export interface ChallengeMemory {
   comments: string[];
   saves: number;
   shares: number;
+  liked: boolean;
 }
 
 const memories: ChallengeMemory[] = [];
 const listeners = new Set<() => void>();
 
 export function getChallengeMemory(challengeId: string) {
-  return memories.find((item) => item.challengeId === challengeId && item.visible) ?? null;
+  return memories.find((item) => item.challengeId === challengeId && item.visible && new Date(item.expiresAt).getTime() > Date.now()) ?? null;
+}
+
+export function getChallengeMemoryById(memoryId: string) {
+  return memories.find((item) => item.id === memoryId && item.visible && new Date(item.expiresAt).getTime() > Date.now()) ?? null;
 }
 
 export function getChallengeMemories() {
@@ -42,7 +47,9 @@ export function subscribeChallengeMemories(listener: () => void) {
 
 function emit() { listeners.forEach((listener) => listener()); }
 
-export function publishChallengeMemory(input: Omit<ChallengeMemory, 'id' | 'publishedAt' | 'expiresAt' | 'visible'>) {
+type PublishChallengeMemoryInput = Omit<ChallengeMemory, 'id' | 'publishedAt' | 'expiresAt' | 'visible' | 'likes' | 'comments' | 'saves' | 'shares' | 'liked'>;
+
+export function publishChallengeMemory(input: PublishChallengeMemoryInput) {
   const existing = memories.find((item) => item.challengeId === input.challengeId);
   const publishedAt = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString();
@@ -70,7 +77,6 @@ export function removeChallengeMemory(challengeId: string) {
   memory.visible = false;
   emit();
 }
-
 
 export function toggleChallengeMemoryLike(challengeId: string) {
   const item = memories.find((memory) => memory.challengeId === challengeId);
