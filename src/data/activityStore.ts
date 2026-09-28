@@ -19,6 +19,18 @@ export function subscribeActivity(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
+export function markActivityRead(id: string) {
+  const item = events.find(event => event.id === id);
+  if (!item) return;
+  item.read = true;
+  emit();
+}
+
+export function markAllActivityRead() {
+  for (const item of events) item.read = true;
+  emit();
+}
+
 export function addActivity(input: {
   type: Notification['type'];
   title: string;
