@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { posts, comments } from '@/data/mock';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
+import { MediaFrame } from '@/components/ui/MediaFrame';
 import { ArrowLeft, Bookmark, Check, Heart, MessageCircle, MoreHorizontal, Send, Share2, Star, UserPlus } from 'lucide-react';
 
 export function PostDetailScreen({ postId }: { postId: string }) {
@@ -45,7 +46,7 @@ export function PostDetailScreen({ postId }: { postId: string }) {
 
       <main className="flex-1 overflow-y-auto pb-32">
         <div className="relative bg-black">
-          <img src={post.image} alt={post.caption} className="w-full max-h-[68vh] object-contain" />
+          <MediaFrame media={{ type: post.mediaType ?? "image", url: post.mediaUrl ?? post.image, thumbnail: post.thumbnail }} alt={post.caption} controls={post.mediaType === "video"} className="w-full max-h-[68vh]" videoClassName="max-h-[68vh]" />
           <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full bg-black/65 px-3 py-1.5 backdrop-blur">
             <Star size={14} className="text-pop-400 fill-pop-400" />
             <span className="text-sm font-black text-white">{post.rating.toFixed(1)}</span>
