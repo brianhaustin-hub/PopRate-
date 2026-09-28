@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Star, Volume2, VolumeX, Swords, Send, Smile } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Star, Volume2, VolumeX, Swords } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getUnifiedVideos } from '@/data/content';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { formatNumber } from '@/lib/utils';
 import { rateUnifiedContent, useUnifiedEngagement } from '@/data/contentEngagement';
-import { addUnifiedComment, useContentComments } from '@/data/contentComments';
+import { useContentComments } from '@/data/contentComments';
+import { CommentSheet } from '@/components/content/CommentSheet';
 import { motion, AnimatePresence } from 'framer-motion';
 import { recordBehavior } from '@/data/behaviorStore';
 import { subscribePublishedContent } from '@/data/contentCreation';
@@ -27,8 +28,6 @@ type WatchVideoCardProps = {
   setRatingOpen: (id: string | null) => void;
   commentOpen: string | null;
   setCommentOpen: (id: string | null) => void;
-  comment: string;
-  setComment: (value: string) => void;
 };
 
 function WatchVideoCard({
@@ -44,8 +43,6 @@ function WatchVideoCard({
   setRatingOpen,
   commentOpen,
   setCommentOpen,
-  comment,
-  setComment,
 }: WatchVideoCardProps) {
   const engagement = useUnifiedEngagement(
     content.kind,
@@ -56,9 +53,6 @@ function WatchVideoCard({
     content.kind,
   );
   const media = content.media.find((item) => item.type === 'video') ?? content.media[0];
-  const [stickerOpen, setStickerOpen] = useState(false);
-  const [selectedSticker, setSelectedSticker] = useState<string | undefined>();
-  const stickers = ['😂','🔥','😭','😍','👏','💀','❤️','😮','🤯','🫶','✨','👀'];
   const watchStartedAt = useRef<number | null>(null);
   const completedRef = useRef(false);
 
@@ -82,16 +76,6 @@ function WatchVideoCard({
     }
   };
 
-  const submitComment = () => {
-    const value = comment.trim();
-    if (!value) return;
-    addUnifiedComment(content.kind === 'challenge_memory' ? (content.challengeId ?? content.id) : content.id, content.kind, value, selectedSticker);
-    setComment('');
-    setSelectedSticker(undefined);
-    setStickerOpen(false);
-    setCommentOpen(null);
-    onToast('Comment posted');
-  };
 
   return (
     <section className="relative h-[100dvh] snap-start">
@@ -150,20 +134,13 @@ function WatchVideoCard({
           </div>
         )}
 
-        <AnimatePresence>
-          {commentOpen === content.id && (
-            <motion.div initial={{ y:30, opacity:0 }} animate={{ y:0, opacity:1 }} exit={{ y:30, opacity:0 }} className="absolute inset-x-3 bottom-24 z-30 rounded-3xl border border-white/10 bg-surface-950/95 p-4 shadow-2xl backdrop-blur-xl">
-              <div className="mb-3 flex items-center justify-between">
-                <div><p className="text-sm font-black">Comments</p><p className="text-[11px] text-white/35">{comments.length} conversation{comments.length === 1 ? '' : 's'}</p></div>
-                <button onClick={() => setCommentOpen(null)} className="text-xs font-bold text-white/50">Close</button>
-              </div>
-              <div className="mb-3 max-h-40 space-y-2 overflow-y-auto">
-                {comments.slice(-4).map(item => <div key={item.id} className="rounded-2xl bg-white/[.04] px-3 py-2"><p className="text-[11px] font-bold">@{item.author.username}</p><p className="mt-0.5 text-xs text-white/65">{item.text}</p></div>)}
-              </div>
-              <div className="relative"><div className="flex gap-2"><button onClick={() => setStickerOpen(v => !v)} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/5 text-white/70"><Smile size={19}/></button><input value={comment} onChange={(e) => setComment(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submitComment(); }} placeholder="Add a comment..." className="min-w-0 flex-1 rounded-2xl bg-white/5 px-4 py-3 text-sm outline-none placeholder:text-white/30"/><button onClick={submitComment} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-pop-500 text-black"><Send size={17}/></button></div>{stickerOpen && <motion.div initial={{y:8,opacity:0,scale:.98}} animate={{y:0,opacity:1,scale:1}} className="absolute bottom-14 left-0 right-0 rounded-3xl border border-white/10 bg-surface-950/98 p-3 shadow-2xl backdrop-blur-xl"><p className="px-2 pb-2 text-[10px] font-black uppercase tracking-[.16em] text-white/35">Quick reactions</p><div className="grid grid-cols-6 gap-1.5">{stickers.map(sticker => <button key={sticker} onClick={() => {setSelectedSticker(sticker);setStickerOpen(false)}} className="grid aspect-square place-items-center rounded-2xl bg-white/[.04] text-xl transition active:scale-90">{sticker}</button>)}</div></motion.div>}</div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <CommentSheet
+          contentId={content.kind === 'challenge_memory' ? (content.challengeId ?? content.id) : content.id}
+          kind={content.kind}
+          open={commentOpen === content.id}
+          onClose={() => setCommentOpen(null)}
+          onToast={onToast}
+        />
 
         <AnimatePresence>{ratingMessage && <motion.div initial={{ y:12, opacity:0, scale:.96 }} animate={{ y:0, opacity:1, scale:1 }} exit={{ y:8, opacity:0 }} className="absolute left-1/2 bottom-8 z-40 -translate-x-1/2 rounded-full border border-white/10 bg-black/75 px-4 py-2.5 text-xs font-black backdrop-blur-xl">{ratingMessage}</motion.div>}</AnimatePresence>
       </div>
@@ -179,7 +156,6 @@ export function WatchScreen() {
   const [muted,setMuted]=useState(true);
   const [ratingOpen,setRatingOpen]=useState<string|null>(null);
   const [commentOpen,setCommentOpen]=useState<string|null>(null);
-  const [comment,setComment]=useState('');
   const [toast,setToast]=useState<string|null>(null);
   const [ratingMessage,setRatingMessage]=useState<string|null>(null);
   const containerRef=useRef<HTMLDivElement>(null);
