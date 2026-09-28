@@ -135,7 +135,7 @@ export function ProfileScreen() {
             {activeTab === 'posts' && (
               <div className="space-y-4">
                 {challengeMemories.map((memory) => (
-                  <article key={memory.id} className="overflow-hidden rounded-3xl border border-pop-500/15 bg-gradient-to-br from-pop-500/10 to-transparent">
+                  <button type="button" onClick={() => router.push(`/post/${memory.id}`)} className="block w-full text-left overflow-hidden rounded-3xl border border-pop-500/15 bg-gradient-to-br from-pop-500/10 to-transparent">
                     <div className="flex items-center justify-between px-4 py-3">
                       <div>
                         <p className="text-[10px] font-black uppercase tracking-[.16em] text-pop-300">Challenge memory</p>
@@ -152,7 +152,7 @@ export function ProfileScreen() {
                       ))}
                     </div>
                     <div className="flex items-center justify-between px-4 py-3">
-                      <span className="text-xs text-white/45">{memory.votesA + memory.votesB} votes · expires in 25h</span>
+                      <span className="text-xs text-white/45">{memory.votesA + memory.votesB} votes · expires {Math.max(1, Math.ceil((new Date(memory.expiresAt).getTime() - Date.now()) / 3600000))}h</span>
                       <span className="text-xs font-bold text-pop-300">Arena result</span>
                     </div>
                   </article>
