@@ -7,6 +7,7 @@ import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challen
 import { getUnifiedFeed } from '@/data/content';
 import { getFollowedUsernames, subscribeSocialGraph, useSocialGraphVersion } from '@/data/socialGraph';
 import { subscribePublishedContent } from '@/data/contentCreation';
+import { subscribeBehavior } from '@/data/behaviorStore';
 import { UnifiedContentCard } from '@/components/content/UnifiedContentCard';
 import { FeedTab } from '@/types';
 
@@ -27,7 +28,8 @@ export function HomeScreen() {
     const unsubMemory = subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories()));
     const unsubContent = subscribePublishedContent(() => setContentVersion(value => value + 1));
     const unsubGraph = subscribeSocialGraph(() => setContentVersion(value => value + 1));
-    return () => { unsubMemory(); unsubContent(); unsubGraph(); };
+    const unsubBehavior = subscribeBehavior(() => setContentVersion(value => value + 1));
+    return () => { unsubMemory(); unsubContent(); unsubGraph(); unsubBehavior(); };
   }, []);
 
   const unifiedFeed = useMemo(() => getUnifiedFeed(), [challengeMemories, contentVersion]);
