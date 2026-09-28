@@ -10,6 +10,8 @@ import { ArrowUpRight, Bookmark, Camera, Check, Edit3, Link as LinkIcon, MoreHor
 import { ProfileTab } from '@/types';
 import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challengeMemories';
 import { getUnifiedProfileContent } from '@/data/content';
+import { subscribePublishedContent } from '@/data/contentCreation';
+import { isFollowing, subscribeSocialGraph, toggleFollow } from '@/data/socialGraph';
 import { UnifiedContentCard } from '@/components/content/UnifiedContentCard';
 
 const user = users[0];
@@ -23,12 +25,18 @@ const tabs: { id: ProfileTab; label: string; icon: typeof Star }[] = [
 export function ProfileScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ProfileTab>('posts');
-  const [following, setFollowing] = useState(user.isFollowing);
+  const [following, setFollowing] = useState(() => isFollowing(user.id));
+  const [contentVersion, setContentVersion] = useState(0);
   const [copied, setCopied] = useState(false);
   const [challengeMemories, setChallengeMemories] = useState(getChallengeMemories());
 
-  useEffect(() => subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories())), []);
-  const unifiedFeed = useMemo(() => getUnifiedProfileContent(), [challengeMemories]);
+  useEffect(() => {
+    const a = subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories()));
+    const b = subscribePublishedContent(() => setContentVersion(value => value + 1));
+    const c = subscribeSocialGraph(() => setFollowing(isFollowing(user.id)));
+    return () => { a(); b(); c(); };
+  }, []);
+  const unifiedFeed = useMemo(() => getUnifiedProfileContent(), [challengeMemories, contentVersion]);
   const profileContent = useMemo(() => unifiedFeed.filter(content => content.creator.username === user.username || posts.some(post => post.id === content.id && post.creator.username === user.username)), [unifiedFeed]);
 
   const copyProfile = async () => {
@@ -44,7 +52,7 @@ export function ProfileScreen() {
 
       <main className="flex-1 overflow-y-auto pb-28">
         <section className="px-4 pt-5"><div className="flex items-start gap-4"><div className="relative"><Avatar src={user.avatar} alt={user.displayName} size="xl" /><button aria-label="Change profile photo" className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-pop-500 border-2 border-surface-950 flex items-center justify-center shadow-pop"><Camera size={14} className="text-white" /></button></div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><h2 className="text-xl font-black text-white truncate">{user.displayName}</h2><Badge variant="accent">Creator</Badge></div><p className="text-sm text-white/45 mt-0.5">@{user.username}</p><p className="text-sm text-white/65 mt-2 leading-5 line-clamp-2">{user.bio}</p></div></div>
-          <div className="flex gap-2 mt-5"><Button size="sm" className="flex-1" onClick={() => router.push('/profile/edit')}><Edit3 size={14} className="mr-1.5" /> Edit profile</Button><Button size="sm" variant={following ? 'secondary' : 'neon'} className="flex-1" onClick={() => setFollowing(v => !v)}>{following ? <Check size={14} className="mr-1.5" /> : <UserPlus size={14} className="mr-1.5" />}{following ? 'Following' : 'Follow'}</Button><button onClick={() => router.push('/settings')} className="w-10 rounded-full bg-surface-800 border border-white/10 flex items-center justify-center"><MoreHorizontal size={17} className="text-white/60" /></button></div>
+          <div className="flex gap-2 mt-5"><Button size="sm" className="flex-1" onClick={() => router.push('/profile/edit')}><Edit3 size={14} className="mr-1.5" /> Edit profile</Button><Button size="sm" variant={following ? 'secondary' : 'neon'} className="flex-1" onClick={() => setFollowing(toggleFollow(user.id))}>{following ? <Check size={14} className="mr-1.5" /> : <UserPlus size={14} className="mr-1.5" />}{following ? 'Following' : 'Follow'}</Button><button onClick={() => router.push('/settings')} className="w-10 rounded-full bg-surface-800 border border-white/10 flex items-center justify-center"><MoreHorizontal size={17} className="text-white/60" /></button></div>
           <div className="grid grid-cols-4 mt-6 py-4 border-y border-white/5">{[['Followers', user.followers.toLocaleString()],['Following', user.following.toLocaleString()],['Avg rating', String(user.averageRating)],['Ratings', user.ratingsCount.toLocaleString()]].map(([label,value]) => <div key={label} className="text-center"><p className="text-base font-black text-white">{value}</p><p className="text-[10px] text-white/35 mt-0.5">{label}</p></div>)}</div>
           <div className="flex items-center gap-2 mt-4 p-3 rounded-2xl bg-surface-900 border border-white/5"><div className="w-9 h-9 rounded-xl bg-pop-500/10 flex items-center justify-center"><Star size={17} className="text-pop-400" /></div><div className="flex-1"><p className="text-xs font-bold text-white">Your PopRate score</p><p className="text-[11px] text-white/35 mt-0.5">Based on ratings across your posts</p></div><p className="text-lg font-black text-pop-400">{user.averageRating}</p></div>
         </section>
