@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Star, Volume2, VolumeX, MoreHorizontal, Swords } from 'lucide-react';
+import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Star, Volume2, VolumeX, Swords, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { posts } from '@/data/mock';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { formatNumber } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function WatchScreen() {
   const router = useRouter();
@@ -14,7 +15,22 @@ export function WatchScreen() {
   const [muted, setMuted] = useState(true);
   const [rated, setRated] = useState<Record<string, number>>({});
   const [ratingOpen, setRatingOpen] = useState<string | null>(null);
+  const [liked, setLiked] = useState<Record<string, boolean>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [commentOpen, setCommentOpen] = useState<string | null>(null);
+  const [comment, setComment] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+  const [ratingMessage, setRatingMessage] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!toast && !ratingMessage) return;
+    const timer = window.setTimeout(() => {
+      setToast(null);
+      setRatingMessage(null);
+    }, 1800);
+    return () => window.clearTimeout(timer);
+  }, [toast, ratingMessage]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -73,14 +89,32 @@ export function WatchScreen() {
               </div>
 
               <div className="flex w-12 flex-col items-center gap-5 pb-1">
-                <button className="flex flex-col items-center gap-1"><Heart size={26} fill="currentColor"/><span className="text-[10px] font-bold">{formatNumber(post.likes)}</span></button>
-                <button className="flex flex-col items-center gap-1"><MessageCircle size={25}/><span className="text-[10px] font-bold">{formatNumber(post.comments)}</span></button>
+                <button onClick={() => setLiked((prev) => ({ ...prev, [post.id]: !prev[post.id] }))} className="flex flex-col items-center gap-1 transition-transform active:scale-90">
+                  <Heart size={26} fill={liked[post.id] ? "currentColor" : "none"} className={liked[post.id] ? "text-red-400" : ""}/>
+                  <span className="text-[10px] font-bold">{formatNumber(post.likes + (liked[post.id] ? 1 : 0))}</span>
+                </button>
+                <button onClick={() => setCommentOpen(post.id)} className="flex flex-col items-center gap-1">
+                  <MessageCircle size={25}/>
+                  <span className="text-[10px] font-bold">{formatNumber(post.comments)}</span>
+                </button>
                 <button onClick={() => setRatingOpen(post.id)} className="flex flex-col items-center gap-1">
                   <Star size={25} fill={rated[post.id] ? "currentColor" : "none"} />
                   <span className="text-[10px] font-bold">{rated[post.id] ? rated[post.id] + "/10" : "Rate"}</span>
                 </button>
-                <button className="flex flex-col items-center gap-1"><Bookmark size={24}/><span className="text-[10px] font-bold">{formatNumber(post.saves)}</span></button>
-                <button className="flex flex-col items-center gap-1"><Share2 size={23}/><span className="text-[10px] font-bold">{formatNumber(post.shares)}</span></button>
+                <button onClick={() => setSaved((prev) => ({ ...prev, [post.id]: !prev[post.id] }))} className="flex flex-col items-center gap-1">
+                  <Bookmark size={24} fill={saved[post.id] ? "currentColor" : "none"}/>
+                  <span className="text-[10px] font-bold">{formatNumber(post.saves + (saved[post.id] ? 1 : 0))}</span>
+                </button>
+                <button onClick={async () => {
+                    const url = window.location.origin + '/post/' + post.id;
+                    try {
+                      if (navigator.share) await navigator.share({ title: 'PopRate', text: post.caption, url });
+                      else await navigator.clipboard.writeText(url);
+                      setToast(navigator.share ? 'Shared' : 'Link copied');
+                    } catch {}
+                  }} className="flex flex-col items-center gap-1">
+                  <Share2 size={23}/><span className="text-[10px] font-bold">{formatNumber(post.shares)}</span>
+                </button>
                 <button onClick={() => router.push('/challenge/new')} className="grid h-11 w-11 place-items-center rounded-full bg-white text-black shadow-xl" aria-label="Create challenge"><Swords size={20}/></button>
               </div>
 
@@ -95,13 +129,41 @@ export function WatchScreen() {
                   </div>
                   <div className="grid grid-cols-5 gap-2">
                     {[1,2,3,4,5,6,7,8,9,10].map((score) => (
-                      <button key={score} onClick={() => { setRated((prev) => ({ ...prev, [post.id]: score })); setRatingOpen(null); }} className="grid aspect-square place-items-center rounded-2xl bg-white/5 text-sm font-black text-white hover:bg-pop-500 active:scale-95">
+                      <button key={score} onClick={() => { setRated((prev) => ({ ...prev, [post.id]: score })); setRatingOpen(null); setRatingMessage(`Rated ${score}/10`); }} className="grid aspect-square place-items-center rounded-2xl bg-white/5 text-sm font-black text-white hover:bg-pop-500 active:scale-95">
                         {score}
                       </button>
                     ))}
                   </div>
                 </div>
               )}
+
+
+              <AnimatePresence>
+                {commentOpen === post.id && (
+                  <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}
+                    className="absolute inset-x-3 bottom-24 z-30 rounded-3xl border border-white/10 bg-surface-950/95 p-4 shadow-2xl backdrop-blur-xl">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-black">Comments</p>
+                      <button onClick={() => setCommentOpen(null)} className="text-xs font-bold text-white/50">Close</button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input value={comment} onChange={(e) => setComment(e.target.value)} onKeyDown={(e) => {
+                        if (e.key === 'Enter' && comment.trim()) { setComment(''); setCommentOpen(null); setToast('Comment posted'); }
+                      }} placeholder="Add a comment..." className="min-w-0 flex-1 rounded-2xl bg-white/5 px-4 py-3 text-sm outline-none placeholder:text-white/30" />
+                      <button onClick={() => { if (!comment.trim()) return; setComment(''); setCommentOpen(null); setToast('Comment posted'); }} className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-pop-500 text-black"><Send size={17}/></button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {(toast || ratingMessage) && (
+                  <motion.div initial={{ y: 12, opacity: 0, scale: .96 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 8, opacity: 0 }}
+                    className="absolute left-1/2 bottom-8 z-40 -translate-x-1/2 rounded-full border border-white/10 bg-black/75 px-4 py-2.5 text-xs font-black backdrop-blur-xl">
+                    {ratingMessage ?? toast}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </section>
         ))}
