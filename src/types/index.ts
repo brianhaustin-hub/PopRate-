@@ -3,7 +3,7 @@ export interface User {
   followers: number; following: number; isFollowing: boolean; averageRating: number;
   ratingsCount: number; joinedAt: string;
 }
-export type ChallengeStatus = 'draft'|'waiting_for_opponent'|'ready'|'live'|'voting_closed'|'result'|'declined'|'cancelled'|'expired';
+export type ChallengeStatus = 'draft'|'waiting_for_opponent'|'opponent_invited'|'opponent_joined'|'ready'|'live'|'voting_closed'|'result'|'declined'|'cancelled'|'expired';
 export type ChallengeVisibility = 'direct'|'open';
 export interface ChallengeSide { user: User; image: string; mediaType?: 'image' | 'video'; mediaUrl?: string; thumbnail?: string; caption?: string; }
 export interface Challenge {
