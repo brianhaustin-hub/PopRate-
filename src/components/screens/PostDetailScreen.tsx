@@ -7,11 +7,11 @@ import { getUnifiedContent } from '@/data/content';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { MediaFrame } from '@/components/ui/MediaFrame';
-import { addChallengeMemoryComment, getChallengeMemoryById, shareChallengeMemory, subscribeChallengeMemories } from '@/data/challengeMemories';
+import { getChallengeMemoryById, subscribeChallengeMemories } from '@/data/challengeMemories';
 import { ArrowLeft, Bookmark, Check, Heart, MessageCircle, MoreHorizontal, Send, Share2, Star, UserPlus, Trophy } from 'lucide-react';
 import { ratePost, toggleLike, toggleSave, usePostEngagement } from '@/data/postEngagement';
 import { useUnifiedEngagement } from '@/data/contentEngagement';
-import { addPostComment, useContentComments } from '@/data/contentComments';
+import { addUnifiedComment, useContentComments } from '@/data/contentComments';
 
 export function PostDetailScreen({ postId }: { postId: string }) {
   const router = useRouter();
@@ -46,7 +46,7 @@ function ChallengeMemoryDetail({ memory, onBack }: { memory: NonNullable<ReturnT
 
   const postComment = () => {
     if (!comment.trim()) return;
-    addChallengeMemoryComment(memory.challengeId, comment);
+    addUnifiedComment(memory.challengeId, 'challenge_memory', comment);
     setComment('');
     setCommentsOpen(true);
   };
