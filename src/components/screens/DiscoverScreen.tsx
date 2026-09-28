@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { formatNumber } from '@/lib/utils';
-import { Search, Flame, TrendingUp, Users, Palette, Trophy, Star, ArrowUpRight } from 'lucide-react';
+import { Search, Flame, TrendingUp, Users, Palette, Trophy, Star, ArrowUpRight, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DiscoverTab } from '@/types';
 import { MediaFrame } from '@/components/ui/MediaFrame';
@@ -171,7 +171,7 @@ export function DiscoverScreen() {
           </div>
         </div>
 
-        <div className="flex gap-1 overflow-x-auto pb-2">
+        <button onClick={() => router.push("/watch")} className="mb-3 flex w-full items-center justify-between rounded-2xl border border-pop-500/20 bg-gradient-to-r from-pop-500/15 to-transparent px-4 py-3 text-left"><span><span className="block text-[10px] font-black uppercase tracking-[0.18em] text-pop-300">New</span><span className="mt-0.5 block text-sm font-black text-white">PopRate Watch</span><span className="block text-[11px] text-white/45">Short videos. Instant ratings.</span></span><span className="grid h-10 w-10 place-items-center rounded-full bg-pop-500 text-white"><Play size={16} fill="currentColor"/></span></button>\n\n        <div className="flex gap-1 overflow-x-auto pb-2">
           {(['trending', 'rising', 'creators', 'categories', 'challenges'] as DiscoverTab[]).map((tab) => (
             <button
               key={tab}
