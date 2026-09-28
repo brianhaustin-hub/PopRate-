@@ -9,6 +9,7 @@ type PostEngagement = {
   saves: number;
   ratingCount: number;
   ratingAverage: number;
+  shares: number;
 };
 
 const state = new Map<string, PostEngagement>();
@@ -22,6 +23,7 @@ for (const post of posts) {
     saves: post.saves,
     ratingCount: post.ratingCount,
     ratingAverage: post.rating,
+    shares: post.shares,
   });
 }
 
@@ -29,7 +31,7 @@ function emit() { listeners.forEach((listener) => listener()); }
 
 export function getPostEngagement(postId: string): PostEngagement {
   return state.get(postId) ?? {
-    likes: 0, saves: 0, ratingCount: 0, ratingAverage: 0,
+    likes: 0, saves: 0, ratingCount: 0, ratingAverage: 0, shares: 0,
   };
 }
 
@@ -52,6 +54,12 @@ export function toggleSave(postId: string) {
   const current = getPostEngagement(postId);
   const saved = !current.saved;
   state.set(postId, { ...current, saved, saves: Math.max(0, current.saves + (saved ? 1 : -1)) });
+  emit();
+}
+
+export function sharePost(postId: string) {
+  const current = getPostEngagement(postId);
+  state.set(postId, { ...current, shares: current.shares + 1 });
   emit();
 }
 
