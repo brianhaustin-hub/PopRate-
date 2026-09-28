@@ -10,6 +10,7 @@ import { formatNumber } from '@/lib/utils';
 import { Search, Flame, TrendingUp, Users, Palette, Trophy, Star, ArrowUpRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DiscoverTab } from '@/types';
+import { MediaFrame } from '@/components/ui/MediaFrame';
 
 export function DiscoverScreen() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export function DiscoverScreen() {
             {posts.slice(0, 5).map((post, i) => (
               <button key={post.id} onClick={() => router.push(`/post/${post.id}`)} className="w-full text-left flex gap-3 p-3 bg-surface-900 rounded-xl border border-white/5 mb-2 hover:border-white/10 transition-colors">
                 <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-                  <img src={post.image} alt="" className="w-full h-full object-cover" />
+                  <MediaFrame media={{ type: post.mediaType ?? "image", url: post.mediaUrl ?? post.image, thumbnail: post.thumbnail }} alt="" className="w-full h-full" autoPlay={post.mediaType === "video"} loop={post.mediaType === "video"} muted />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-white truncate">{post.caption.slice(0, 50)}...</p>
@@ -55,7 +56,7 @@ export function DiscoverScreen() {
               {posts.slice(0, 6).map((post, i) => (
                 <button key={post.id} onClick={() => router.push(`/post/${post.id}`)} className="w-full text-left overflow-hidden rounded-xl bg-surface-900 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
                   <div className="aspect-square relative">
-                    <img src={post.image} alt="" className="w-full h-full object-cover" />
+                    <MediaFrame media={{ type: post.mediaType ?? "image", url: post.mediaUrl ?? post.image, thumbnail: post.thumbnail }} alt="" className="w-full h-full" autoPlay={post.mediaType === "video"} loop={post.mediaType === "video"} muted />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-2 left-2 right-2">
                       <p className="text-white font-semibold text-xs">{post.creator.displayName}</p>
