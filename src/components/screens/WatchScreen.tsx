@@ -12,6 +12,8 @@ export function WatchScreen() {
   const videos = useMemo(() => posts.filter((post) => post.mediaType === 'video'), []);
   const [activeIndex, setActiveIndex] = useState(0);
   const [muted, setMuted] = useState(true);
+  const [rated, setRated] = useState<Record<string, number>>({});
+  const [ratingOpen, setRatingOpen] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,7 +74,10 @@ export function WatchScreen() {
               <div className="flex w-12 flex-col items-center gap-5 pb-1">
                 <button className="flex flex-col items-center gap-1"><Heart size={26} fill="currentColor"/><span className="text-[10px] font-bold">{formatNumber(post.likes)}</span></button>
                 <button className="flex flex-col items-center gap-1"><MessageCircle size={25}/><span className="text-[10px] font-bold">{formatNumber(post.comments)}</span></button>
-                <button onClick={() => router.push('/post/' + post.id)} className="flex flex-col items-center gap-1"><Star size={25}/><span className="text-[10px] font-bold">Rate</span></button>
+                <button onClick={() => setRatingOpen(post.id)} className="flex flex-col items-center gap-1">
+                  <Star size={25} fill={rated[post.id] ? "currentColor" : "none"} />
+                  <span className="text-[10px] font-bold">{rated[post.id] ? rated[post.id] + "/10" : "Rate"}</span>
+                </button>
                 <button className="flex flex-col items-center gap-1"><Bookmark size={24}/><span className="text-[10px] font-bold">{formatNumber(post.saves)}</span></button>
                 <button className="flex flex-col items-center gap-1"><Share2 size={23}/><span className="text-[10px] font-bold">{formatNumber(post.shares)}</span></button>
                 <button onClick={() => router.push('/challenge/new')} className="grid h-11 w-11 place-items-center rounded-full bg-white text-black shadow-xl" aria-label="Create challenge"><Swords size={20}/></button>
