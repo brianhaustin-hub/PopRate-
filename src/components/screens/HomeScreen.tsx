@@ -5,7 +5,6 @@ import { Bell, ChevronRight, Flame, Plus, Search, Share2, Sparkles, Swords, Trop
 import { useRouter } from 'next/navigation';
 import { posts } from '@/data/mock';
 import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challengeMemories';
-import { getUnifiedFeed } from '@/data/content';
 import { FeedTab } from '@/types';
 
 const challengeSamples = [
@@ -20,7 +19,6 @@ export function HomeScreen() {
   const [challengeMemories,setChallengeMemories]=useState(getChallengeMemories());
   useEffect(() => subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories())), []);
   const visiblePosts=useMemo(()=>activeTab==='following'?posts.filter(p=>p.creator.isFollowing):posts.slice(0,4),[activeTab]);
-  const unifiedFeed = useMemo(() => getUnifiedFeed(), [challengeMemories]);
 
   return <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#21102b_0,#09090b_38%)] pb-24">
     <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-black/60 px-4 pb-3 pt-4 backdrop-blur-2xl">
