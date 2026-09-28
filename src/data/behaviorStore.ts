@@ -1,6 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import { recordDailyAction } from '@/data/retentionStore';
 
 export type BehaviorType =
   | 'impression'
@@ -54,6 +55,7 @@ export function recordBehavior(input: Omit<BehaviorEvent, 'id' | 'createdAt'> & 
     createdAt: new Date().toISOString(),
   });
   if (events.length > 1500) events.splice(0, events.length - 1500);
+  recordDailyAction();
   emit();
 }
 
