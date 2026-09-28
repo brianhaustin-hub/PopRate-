@@ -93,7 +93,7 @@ function ChallengeMemoryDetail({ memory, onBack }: { memory: NonNullable<ReturnT
             <button onClick={() => setCommentsOpen(v => !v)} className="flex items-center gap-1.5 text-sm text-white/45"><MessageCircle size={19}/> {memoryComments.length}</button>
             <button onClick={share} className="flex items-center gap-1.5 text-sm text-white/45"><Send size={18}/> Share</button>
           </div>
-          <button onClick={() => { toggleChallengeMemorySave(memory.challengeId); setSaved(v => !v); }}><Bookmark size={20} fill={saved ? 'currentColor' : 'none'}/></button>
+          <button onClick={engagement.toggleSave}><Bookmark size={20} fill={engagement.saved ? 'currentColor' : 'none'}/></button>
         </div>
 
         {commentsOpen && <section className="mt-5 rounded-3xl bg-surface-900 border border-white/5 p-4">
