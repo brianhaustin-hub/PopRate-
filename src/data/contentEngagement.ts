@@ -13,6 +13,7 @@ import {
   toggleLike as togglePostLike,
   toggleSave as togglePostSave,
   ratePost,
+  sharePost,
 } from '@/data/postEngagement';
 
 type MemoryRating = {
@@ -81,7 +82,7 @@ export function useUnifiedEngagement(kind: 'post' | 'challenge_memory', id: stri
   if (kind === 'challenge_memory') {
     return {
       liked: Boolean(memory?.liked),
-      saved: Boolean(memory?.saves),
+      saved: Boolean(memory?.saved),
       likes: memory?.likes ?? 0,
       saves: memory?.saves ?? 0,
       shares: memory?.shares ?? 0,
@@ -113,13 +114,13 @@ export function useUnifiedEngagement(kind: 'post' | 'challenge_memory', id: stri
     saved: Boolean(postEngagement.saved),
     likes: postEngagement.likes,
     saves: postEngagement.saves,
-    shares: 0,
+    shares: postEngagement.shares,
     rating: postEngagement.rating,
     ratingCount: postEngagement.ratingCount,
     ratingAverage: postEngagement.ratingAverage,
     toggleLike: () => togglePostLike(id),
     toggleSave: () => togglePostSave(id),
-    share: () => undefined,
+    share: () => sharePost(id),
     rate: (score: number) => ratePost(id, score),
   };
 }
