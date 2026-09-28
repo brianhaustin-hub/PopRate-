@@ -2,6 +2,7 @@ import { posts } from '@/data/mock';
 import { getChallengeMemories, type ChallengeMemory } from '@/data/challengeMemories';
 import type { Post } from '@/types';
 import { getFollowedUserIds } from '@/data/socialGraph';
+import { getCreatorAffinity, getInterestScore, getRecentContentIds } from '@/data/behaviorStore';
 
 export type ContentKind = 'post' | 'challenge_memory';
 
@@ -108,14 +109,19 @@ export function getUnifiedFeed(): UnifiedContent[] {
     .map(memoryToContent);
 
   const followed = getFollowedUserIds();
+  const recent = getRecentContentIds(24);
   const score = (content: UnifiedContent) => {
     const creatorId = posts.find(post => post.id === content.id)?.creator.id;
     const ageHours = Math.max(0, (Date.now() - new Date(content.createdAt).getTime()) / 3600000);
     const engagement = content.likes + content.comments * 2 + content.saves * 3 + content.shares * 2;
     const freshness = Math.max(0, 48 - ageHours) / 48;
     const relationship = creatorId && followed.has(creatorId) ? 7 : 0;
+    const interest = Math.min(Math.max(getInterestScore(content.category), -3), 8);
+    const creatorAffinity = Math.min(getCreatorAffinity(content.creator.username), 5);
     const ratingSignal = content.ratingCount ? Math.min(content.rating / 10, 1) * 3 : 0;
-    return relationship + freshness * 5 + Math.log1p(engagement) * 1.5 + ratingSignal;
+    const seenPenalty = recent.has(content.id) ? -2.5 : 0;
+    const exploration = content.ratingCount === 0 ? 0.8 : 0;
+    return relationship + interest + creatorAffinity + freshness * 5 + Math.log1p(engagement) * 1.5 + ratingSignal + seenPenalty + exploration;
   };
   return [...memories, ...normalPosts].sort((a, b) => score(b) - score(a));
 }
