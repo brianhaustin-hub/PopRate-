@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { posts, comments } from '@/data/mock';
+import { getUnifiedContent } from '@/data/content';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { MediaFrame } from '@/components/ui/MediaFrame';
@@ -17,9 +18,10 @@ export function PostDetailScreen({ postId }: { postId: string }) {
 
   if (memory) return <ChallengeMemoryDetail memory={memory} onBack={() => router.back()} />;
 
+  const unified = getUnifiedContent(postId);
   const post = useMemo(() => posts.find((item) => item.id === postId) ?? posts[0], [postId]);
   const postComments = useMemo(() => comments.filter((item) => item.postId === post.id), [post.id]);
-  return <RegularPostDetail post={post} postComments={postComments} onBack={() => router.back()} />;
+  return <RegularPostDetail post={post} unified={unified} postComments={postComments} onBack={() => router.back()} />;
 }
 
 function ChallengeMemoryDetail({ memory, onBack }: { memory: NonNullable<ReturnType<typeof getChallengeMemoryById>>; onBack: () => void }) {
@@ -106,9 +108,10 @@ function ChallengeMemoryDetail({ memory, onBack }: { memory: NonNullable<ReturnT
   </div>;
 }
 
-function RegularPostDetail({ post, postComments, onBack }: { post: any; postComments: any[]; onBack: () => void }) {
+function RegularPostDetail({ post, unified, postComments, onBack }: { post: any; unified: ReturnType<typeof getUnifiedContent>; postComments: any[]; onBack: () => void }) {
   const router = useRouter();
   const engagement = usePostEngagement(post.id);
+  const content = unified ?? getUnifiedContent(post.id);
   const [rating, setRating] = useState<number | null>(engagement.rating ?? null);
   const [following, setFollowing] = useState(post.creator.isFollowing);
   const [comment, setComment] = useState('');
