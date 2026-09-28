@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { posts, users, challenges, categories } from '@/data/mock';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
@@ -11,12 +11,21 @@ import { useRouter } from 'next/navigation';
 import { DiscoverTab } from '@/types';
 import { getUnifiedFeed } from '@/data/content';
 import { UnifiedContentCard } from '@/components/content/UnifiedContentCard';
+import { isFollowing, subscribeSocialGraph, toggleFollow } from '@/data/socialGraph';
+import { subscribePublishedContent } from '@/data/contentCreation';
 
 export function DiscoverScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<DiscoverTab>('trending');
   const [search, setSearch] = useState('');
-  const unifiedFeed = useMemo(() => getUnifiedFeed(), []);
+  const [version, setVersion] = useState(0);
+  useEffect(() => {
+    const onChange = () => setVersion(value => value + 1);
+    const a = subscribeSocialGraph(onChange);
+    const b = subscribePublishedContent(onChange);
+    return () => { a(); b(); };
+  }, []);
+  const unifiedFeed = useMemo(() => getUnifiedFeed(), [version]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -27,7 +36,7 @@ export function DiscoverScreen() {
         return <div className="space-y-4"><div className="flex items-center gap-2"><TrendingUp size={20} className="text-green-500" /><h2 className="text-xl font-bold text-white">Rising Stars</h2></div><div className="grid grid-cols-2 gap-3">{unifiedFeed.slice(0, 6).map(content => <UnifiedContentCard key={content.id} content={content} compact />)}</div></div>;
 
       case 'creators':
-        return <div className="space-y-4"><div className="flex items-center gap-2"><Users size={20} className="text-neon-500" /><h2 className="text-xl font-bold text-white">Top Creators</h2></div><div className="space-y-3">{users.slice(0, 6).map(user => <button key={user.id} onClick={() => router.push('/user/' + user.username)} className="w-full text-left flex items-center gap-3 p-3 bg-surface-900 rounded-xl border border-white/5"><Avatar src={user.avatar} size="lg" showBadge /><div className="flex-1 min-w-0"><p className="font-semibold text-sm text-white">{user.displayName}</p><p className="text-xs text-white/40">{user.followers.toLocaleString()} followers</p></div><div className="text-right"><p className="text-sm font-bold text-pop-500">★ {user.averageRating}</p><p className="text-[10px] text-white/30">{user.ratingsCount.toLocaleString()} ratings</p></div><Button variant="secondary" size="sm">Follow</Button></button>)}</div></div>;
+        return <div className="space-y-4"><div className="flex items-center gap-2"><Users size={20} className="text-neon-500" /><h2 className="text-xl font-bold text-white">Top Creators</h2></div><div className="space-y-3">{users.slice(0, 6).map(user => <button key={user.id} onClick={() => router.push('/user/' + user.username)} className="w-full text-left flex items-center gap-3 p-3 bg-surface-900 rounded-xl border border-white/5"><Avatar src={user.avatar} size="lg" showBadge /><div className="flex-1 min-w-0"><p className="font-semibold text-sm text-white">{user.displayName}</p><p className="text-xs text-white/40">{user.followers.toLocaleString()} followers</p></div><div className="text-right"><p className="text-sm font-bold text-pop-500">★ {user.averageRating}</p><p className="text-[10px] text-white/30">{user.ratingsCount.toLocaleString()} ratings</p></div><Button variant={isFollowing(user.id) ? 'secondary' : 'neon'} size="sm" onClick={(event) => { event.stopPropagation(); toggleFollow(user.id); }}>{isFollowing(user.id) ? 'Following' : 'Follow'}</Button></button>)}</div></div>;
 
       case 'categories':
         return <div className="space-y-4"><div className="flex items-center gap-2"><Palette size={20} className="text-yellow-500" /><h2 className="text-xl font-bold text-white">Categories</h2></div><div className="grid grid-cols-2 gap-3">{categories.map(cat => <div key={cat.name} className="p-4 bg-surface-900 rounded-xl border border-white/5 text-center"><div className="w-12 h-12 rounded-xl bg-surface-800 flex items-center justify-center mx-auto mb-2"><span className="text-2xl">{cat.icon}</span></div><p className="font-semibold text-sm text-white">{cat.name}</p><p className="text-xs text-white/40">{formatNumber(cat.count)} posts</p></div>)}</div></div>;
