@@ -45,6 +45,7 @@ export function WatchScreen() {
               className="h-full w-full"
               videoClassName="h-full w-full object-cover"
               autoPlay={index === activeIndex}
+              active={index === activeIndex}
               loop
               muted={muted}
             />
