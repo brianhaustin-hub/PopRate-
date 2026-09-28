@@ -1,6 +1,7 @@
 import { posts } from '@/data/mock';
 import { getChallengeMemories, type ChallengeMemory } from '@/data/challengeMemories';
 import type { Post } from '@/types';
+import { getFollowedUserIds } from '@/data/socialGraph';
 
 export type ContentKind = 'post' | 'challenge_memory';
 
@@ -106,9 +107,17 @@ export function getUnifiedFeed(): UnifiedContent[] {
     .filter((memory) => memory.placement === 'profile_and_feed')
     .map(memoryToContent);
 
-  return [...memories, ...normalPosts].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
+  const followed = getFollowedUserIds();
+  const score = (content: UnifiedContent) => {
+    const creatorId = posts.find(post => post.id === content.id)?.creator.id;
+    const ageHours = Math.max(0, (Date.now() - new Date(content.createdAt).getTime()) / 3600000);
+    const engagement = content.likes + content.comments * 2 + content.saves * 3 + content.shares * 2;
+    const freshness = Math.max(0, 48 - ageHours) / 48;
+    const relationship = creatorId && followed.has(creatorId) ? 7 : 0;
+    const ratingSignal = content.ratingCount ? Math.min(content.rating / 10, 1) * 3 : 0;
+    return relationship + freshness * 5 + Math.log1p(engagement) * 1.5 + ratingSignal;
+  };
+  return [...memories, ...normalPosts].sort((a, b) => score(b) - score(a));
 }
 
 export function getUnifiedProfileContent(): UnifiedContent[] {
