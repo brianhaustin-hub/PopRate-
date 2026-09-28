@@ -24,6 +24,7 @@ export function addActivity(input: {
   title: string;
   message: string;
   image?: string;
+  href?: string;
 }) {
   const item: Notification = {
     id: 'activity-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
@@ -31,6 +32,7 @@ export function addActivity(input: {
     title: input.title,
     message: input.message,
     image: input.image ?? users[0].avatar,
+    href: input.href,
     timestamp: new Date().toISOString(),
     read: false,
   };
