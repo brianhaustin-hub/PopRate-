@@ -110,8 +110,9 @@ export function getUnifiedFeed(): UnifiedContent[] {
 
   const followed = getFollowedUserIds();
   const recent = getRecentContentIds(24);
+
   const score = (content: UnifiedContent) => {
-    const creatorId = posts.find(post => post.id === content.id)?.creator.id;
+    const creatorId = posts.find(post => post.creator.id && post.creator.username === content.creator.username)?.creator.id;
     const ageHours = Math.max(0, (Date.now() - new Date(content.createdAt).getTime()) / 3600000);
     const engagement = content.likes + content.comments * 2 + content.saves * 3 + content.shares * 2;
     const freshness = Math.max(0, 48 - ageHours) / 48;
@@ -121,9 +122,32 @@ export function getUnifiedFeed(): UnifiedContent[] {
     const ratingSignal = content.ratingCount ? Math.min(content.rating / 10, 1) * 3 : 0;
     const seenPenalty = recent.has(content.id) ? -2.5 : 0;
     const exploration = content.ratingCount === 0 ? 0.8 : 0;
-    return relationship + interest + creatorAffinity + freshness * 5 + Math.log1p(engagement) * 1.5 + ratingSignal + seenPenalty + exploration;
+    const challengeSignal = content.kind === 'challenge_memory' ? 1.2 : 0;
+    return relationship + interest + creatorAffinity + freshness * 5 + Math.log1p(engagement) * 1.5 + ratingSignal + seenPenalty + exploration + challengeSignal;
   };
-  return [...memories, ...normalPosts].sort((a, b) => score(b) - score(a));
+
+  const ranked = [...memories, ...normalPosts].sort((a, b) => score(b) - score(a));
+  const creatorCounts = new Map<string, number>();
+  const categoryCounts = new Map<string, number>();
+  const selected: UnifiedContent[] = [];
+  const deferred: UnifiedContent[] = [];
+
+  for (const content of ranked) {
+    const creatorCount = creatorCounts.get(content.creator.username) ?? 0;
+    const categoryCount = categoryCounts.get(content.category) ?? 0;
+
+    // Keep the main feed varied without hiding content forever.
+    if (creatorCount >= 2 || categoryCount >= 4) {
+      deferred.push(content);
+      continue;
+    }
+
+    selected.push(content);
+    creatorCounts.set(content.creator.username, creatorCount + 1);
+    categoryCounts.set(content.category, categoryCount + 1);
+  }
+
+  return selected.concat(deferred);
 }
 
 export function getUnifiedProfileContent(): UnifiedContent[] {
