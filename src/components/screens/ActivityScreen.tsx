@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { notifications as seedNotifications } from '@/data/mock';
 import { Avatar } from '@/components/ui/Avatar';
 import { formatTimeAgo } from '@/lib/utils';
@@ -18,6 +18,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { Notification } from '@/types';
+import { getActivity, subscribeActivity } from '@/data/activityStore';
 
 type ActivityFilter = 'all' | 'likes' | 'comments' | 'follows' | 'ratings' | 'challenges';
 
@@ -53,8 +54,10 @@ const filterMap: Record<ActivityFilter, Notification['type'][]> = {
 };
 
 export function ActivityScreen() {
-  const [items, setItems] = useState<Notification[]>(seedNotifications);
+  const [items, setItems] = useState<Notification[]>(getActivity());
   const [filter, setFilter] = useState<ActivityFilter>('all');
+
+  useEffect(() => subscribeActivity(() => setItems(getActivity())), []);
 
   const unreadCount = items.filter((item) => !item.read).length;
   const filtered = useMemo(
