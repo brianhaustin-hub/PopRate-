@@ -13,6 +13,7 @@ export type ContentComment = {
   text: string;
   createdAt: string;
   likes: number;
+  sticker?: string;
 };
 
 const state = new Map<string, ContentComment[]>();
@@ -77,6 +78,7 @@ export function addPostComment(postId: string, text: string) {
     id: `comment-${postId}-${Date.now()}`,
     author: { displayName: 'You', username: 'you', avatar: 'https://picsum.photos/seed/me/100/100' },
     text: value,
+    sticker,
     createdAt: new Date().toISOString(),
     likes: 0,
   });
@@ -107,6 +109,7 @@ export function addUnifiedComment(
   contentId: string,
   kind: 'post' | 'challenge_memory',
   text: string,
+  sticker?: string,
 ) {
   const value = text.trim();
   if (!value) return null;
@@ -114,7 +117,7 @@ export function addUnifiedComment(
   if (kind === 'challenge_memory') {
     const memory = getChallengeMemory(contentId);
     if (!memory) return null;
-    const updated = addChallengeMemoryComment(contentId, value);
+    const updated = addChallengeMemoryComment(contentId, sticker ? sticker + ' ' + value : value);
     if (!updated) return null;
     recordBehavior({
       type: 'comment',
