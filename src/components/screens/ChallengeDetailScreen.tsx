@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, Heart, MessageCircle, MoreHorizontal, Share2, ShieldAlert, Trophy, UserX, Users, Zap, Swords } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
-import { getChallengeWorkflow } from '@/data/challengeWorkflow';
+import { castChallengeVote, getChallengeWorkflow, subscribeChallengeWorkflow } from '@/data/challengeWorkflow';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { addChallengeMemoryComment, getChallengeMemory, publishChallengeMemory, removeChallengeMemory, shareChallengeMemory, toggleChallengeMemoryLike, toggleChallengeMemorySave } from '@/data/challengeMemories';
 
@@ -14,6 +14,9 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const params = useParams<{ id: string }>();
   const challengeId = params?.id || 'c1';
   const workflow = getChallengeWorkflow(challengeId);
+  const [version, setVersion] = useState(0);
+  useEffect(() => subscribeChallengeWorkflow(() => setVersion(value => value + 1)), [challengeId]);
+  void version;
   const unavailable = !workflow || (mode === 'live' ? workflow.status !== 'live' : workflow.status !== 'result');
   const [selected, setSelected] = useState<'a' | 'b' | null>(null);
   const [voted, setVoted] = useState(false);
@@ -41,7 +44,13 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
 
   const submitVote = () => {
     if (!selected || voted || isResult) return;
-    if (workflow) { workflow.votesA = selected === 'a' ? workflow.votesA + 1 : workflow.votesA; workflow.votesB = selected === 'b' ? workflow.votesB + 1 : workflow.votesB;  } setVoted(true);
+    const updated = castChallengeVote(challengeId, selected);
+    if (!updated) {
+      setVoted(true);
+      return;
+    }
+    setVoted(true);
+    setSelected(null);
   };
 
   if (unavailable) return (
