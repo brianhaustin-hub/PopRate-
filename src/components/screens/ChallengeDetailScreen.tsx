@@ -12,6 +12,7 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const params = useParams<{ id: string }>();
   const challengeId = params?.id || 'c1';
   const workflow = getChallengeWorkflow(challengeId);
+  const unavailable = !workflow || (mode === 'live' ? workflow.status !== 'live' : workflow.status !== 'result');
   const [selected, setSelected] = useState<'a' | 'b' | null>(null);
   const [voted, setVoted] = useState(false);
   const [liked, setLiked] = useState(false);
@@ -36,6 +37,18 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
     if (!selected || voted || isResult) return;
     if (workflow) { workflow.votesA = selected === 'a' ? workflow.votesA + 1 : workflow.votesA; workflow.votesB = selected === 'b' ? workflow.votesB + 1 : workflow.votesB; workflow.votesA + workflow.votesB; } setVoted(true);
   };
+
+  if (unavailable) return (
+    <div className="flex h-full items-center justify-center px-5">
+      <div className="w-full max-w-md text-center">
+        <div className="mx-auto grid h-20 w-20 place-items-center rounded-[2rem] bg-white/[.06] text-white/40"><Swords size={32}/></div>
+        <p className="mt-7 text-xs font-black uppercase tracking-[.18em] text-white/30">ARENA NOT READY</p>
+        <h1 className="mt-3 text-3xl font-black tracking-[-.04em]">This arena is not in this stage yet.</h1>
+        <p className="mt-3 text-sm leading-6 text-white/45">Challenge media and voting stay locked until the lifecycle reaches the correct stage.</p>
+        <button onClick={() => router.push('/challenge/'+challengeId+'/status')} className="mt-8 h-14 w-full rounded-2xl bg-white text-sm font-black text-black">View challenge status</button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="h-full overflow-y-auto pb-10">
@@ -68,8 +81,8 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
         </section>
 
         <section className="mt-6 grid grid-cols-2 gap-2">
-          <VoteSide label="ALEX" image="{workflow?.creatorSide || 'https://picsum.photos/seed/poprate-live-a/700/900'}" percent={percentA} votes={votesA} selected={selected === 'a'} disabled={voted || isResult} winner={isResult && votesA > votesB} onSelect={() => setSelected('a')} />
-          <VoteSide label={workflow?.opponent?.name ? workflow.opponent.name.toUpperCase() : "B"} image="{workflow?.opponentSide || 'https://picsum.photos/seed/poprate-live-b/700/900'}" percent={percentB} votes={votesB} selected={selected === 'b'} disabled={voted || isResult} winner={isResult && votesB > votesA} onSelect={() => setSelected('b')} />
+          <VoteSide label="ALEX" image={workflow?.creatorSide || 'https://picsum.photos/seed/poprate-live-a/700/900'} percent={percentA} votes={votesA} selected={selected === 'a'} disabled={voted || isResult} winner={isResult && votesA > votesB} onSelect={() => setSelected('a')} />
+          <VoteSide label={workflow?.opponent?.name ? workflow.opponent.name.toUpperCase() : "B"} image={workflow?.opponentSide || 'https://picsum.photos/seed/poprate-live-b/700/900'} percent={percentB} votes={votesB} selected={selected === 'b'} disabled={voted || isResult} winner={isResult && votesB > votesA} onSelect={() => setSelected('b')} />
         </section>
 
         {!isResult && !voted && (
