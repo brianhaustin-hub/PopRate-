@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Bell, ChevronRight, Flame, Plus, Search, Share2, Sparkles, Swords, Trophy, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { posts } from '@/data/mock';
+import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challengeMemories';
 import { FeedTab } from '@/types';
 
 const challengeSamples = [
@@ -15,6 +16,8 @@ export function HomeScreen() {
   const router=useRouter();
   const [activeTab,setActiveTab]=useState<FeedTab>('forYou');
   const [voted,setVoted]=useState<Record<string,'left'|'right'>>({});
+  const [challengeMemories,setChallengeMemories]=useState(getChallengeMemories());
+  useEffect(() => subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories())), []);
   const visiblePosts=useMemo(()=>activeTab==='following'?posts.filter(p=>p.creator.isFollowing):posts.slice(0,4),[activeTab]);
 
   return <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#21102b_0,#09090b_38%)] pb-24">
@@ -38,6 +41,20 @@ export function HomeScreen() {
           <div className="grid grid-cols-2 gap-1 bg-black">{[challenge.left,challenge.right].map((side,index)=>{const choice=index===0?'left':'right';const isVoted=voted[challenge.id]===choice;return <button key={side.handle} onClick={()=>setVoted(v=>({...v,[challenge.id]:choice}))} className={['group relative aspect-[4/5] overflow-hidden text-left',isVoted?'ring-2 ring-inset ring-pop-400':''].join(' ')}><img src={side.image} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent"/><div className="absolute bottom-3 left-3"><p className="text-sm font-black text-white">{side.name}</p><p className="text-[11px] text-white/55">{side.handle}</p></div>{isVoted&&<span className="absolute right-3 top-3 rounded-full bg-white px-2 py-1 text-[10px] font-black text-black">YOUR PICK</span>}</button>})}</div>
           <div className="flex items-center justify-between px-4 py-3"><div className="flex items-center gap-2 text-xs text-white/40"><Users size={14}/> {challenge.votes.toLocaleString()} votes</div>{voted[challenge.id]&&<span className="text-xs font-bold text-pop-300">Vote locked in ✓</span>}</div>
         </article>)}</div></section>}
+      {activeTab==='forYou' && challengeMemories.filter((memory) => memory.placement === 'profile_and_feed').map((memory) => (
+        <section key={memory.id} className="overflow-hidden rounded-3xl border border-pop-500/15 bg-gradient-to-br from-pop-500/10 to-transparent">
+          <div className="flex items-center justify-between px-4 py-3">
+            <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-pop-300">Challenge memory</p><h3 className="mt-1 text-base font-black text-white">{memory.title}</h3></div>
+            <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/45">25h</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1 bg-black">
+            {[memory.creatorMedia, memory.opponentMedia].map((media, i) => media.type === 'video'
+              ? <video key={i} src={media.url} poster={media.thumbnail} muted playsInline loop autoPlay className="aspect-[4/5] w-full object-cover" />
+              : <img key={i} src={media.url} alt="" className="aspect-[4/5] w-full object-cover" />)}
+          </div>
+          <div className="flex items-center justify-between px-4 py-3"><span className="text-xs text-white/45">{(memory.votesA + memory.votesB).toLocaleString()} votes · finished arena</span><span className="text-xs font-bold text-pop-300">Result</span></div>
+        </section>
+      ))}
       <section><div className="mb-3 flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Discover</p><h2 className="text-lg font-black text-white">More from PopRate</h2></div><Sparkles size={18} className="text-neon-400"/></div><div className="grid grid-cols-2 gap-3">{visiblePosts.slice(0,4).map(post=><article key={post.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035]"><div className="aspect-[4/5] overflow-hidden"><img src={post.image} alt="" className="h-full w-full object-cover"/></div><div className="p-3"><p className="truncate text-sm font-bold text-white">{post.creator.displayName}</p><div className="mt-1 flex items-center gap-1 text-[11px] text-white/40"><Trophy size={12}/> {post.rating.toFixed(1)}</div></div></article>)}</div></section>
     </main>
   </div>;
