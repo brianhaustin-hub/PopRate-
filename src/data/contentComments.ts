@@ -14,10 +14,15 @@ export type ContentComment = {
   createdAt: string;
   likes: number;
   sticker?: string;
+  liked?: boolean;
+  parentId?: string;
+  replies?: number;
 };
 
 const state = new Map<string, ContentComment[]>();
 const listeners = new Set<() => void>();
+const commentLikes = new Map<string, boolean>();
+const replyCounts = new Map<string, number>();
 
 for (const comment of comments) {
   const list = state.get(comment.postId) ?? [];
@@ -39,18 +44,28 @@ function emit() {
   listeners.forEach((listener) => listener());
 }
 
+const STICKERS = ['😂','🔥','😭','😍','👏','💀','❤️','😮','🤯','🫶','✨','👀'];
+
+function decorate(comment: ContentComment): ContentComment {
+  return { ...comment, liked: Boolean(commentLikes.get(comment.id)), replies: replyCounts.get(comment.id) ?? comment.replies ?? 0 };
+}
+
 function getList(contentId: string, kind: 'post' | 'challenge_memory') {
   if (kind === 'challenge_memory') {
     const memory = getChallengeMemory(contentId);
-    return memory?.comments.map((text, index) => ({
-      id: `memory-comment-${contentId}-${index}`,
-      author: { displayName: 'PopRate user', username: 'poprate_user', avatar: 'https://picsum.photos/seed/poprate-user/100/100' },
-      text,
-      createdAt: new Date().toISOString(),
-      likes: 0,
-    })) ?? [];
+    return memory?.comments.map((raw, index) => {
+      const sticker = STICKERS.find((candidate) => raw.startsWith(candidate + ' '));
+      return decorate({
+        id: `memory-comment-${contentId}-${index}`,
+        author: { displayName: 'PopRate user', username: 'poprate_user', avatar: 'https://picsum.photos/seed/poprate-user/100/100' },
+        text: sticker ? raw.slice(sticker.length + 1) : raw,
+        sticker,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+      });
+    }) ?? [];
   }
-  return state.get(contentId) ?? [];
+  return (state.get(contentId) ?? []).map(decorate);
 }
 
 export function subscribeContentComments(listener: () => void) {
@@ -70,7 +85,7 @@ export function useContentComments(contentId: string, kind: 'post' | 'challenge_
   );
 }
 
-export function addPostComment(postId: string, text: string, sticker?: string) {
+export function addPostComment(postId: string, text: string, sticker?: string, parentId?: string) {
   const value = text.trim();
   if (!value) return;
   const list = state.get(postId) ?? [];
@@ -81,6 +96,7 @@ export function addPostComment(postId: string, text: string, sticker?: string) {
     sticker,
     createdAt: new Date().toISOString(),
     likes: 0,
+    parentId,
   });
   state.set(postId, list);
   const post = posts.find((item) => item.id === postId);
@@ -105,11 +121,24 @@ export function addPostComment(postId: string, text: string, sticker?: string) {
   return list[list.length - 1];
 }
 
+export function toggleCommentLike(contentId: string, kind: 'post' | 'challenge_memory', commentId: string) {
+  const next = !commentLikes.get(commentId);
+  commentLikes.set(commentId, next);
+  if (kind === 'post') {
+    const list = state.get(contentId) ?? [];
+    const item = list.find((comment) => comment.id === commentId);
+    if (item) item.likes = Math.max(0, item.likes + (next ? 1 : -1));
+  }
+  emit();
+  return next;
+}
+
 export function addUnifiedComment(
   contentId: string,
   kind: 'post' | 'challenge_memory',
   text: string,
   sticker?: string,
+  parentId?: string,
 ) {
   const value = text.trim();
   if (!value) return null;
@@ -136,5 +165,5 @@ export function addUnifiedComment(
     return updated;
   }
 
-  return addPostComment(contentId, value);
+  return addPostComment(contentId, value, sticker, parentId);
 }
