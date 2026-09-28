@@ -31,7 +31,7 @@ export function DiscoverScreen() {
             {unifiedFeed.slice(0, 5).map((content, i) => (
               <button key={content.id} onClick={() => router.push(`/post/${content.id}`)} className="w-full text-left flex gap-3 p-3 bg-surface-900 rounded-xl border border-white/5 mb-2 hover:border-white/10 transition-colors">
                 <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-                  <MediaFrame media={{ type: content.media[0]?.type ?? "image", url: content.media[0]?.url ?? content.image, thumbnail: content.media[0]?.thumbnail }} alt="" className="w-full h-full" autoPlay={post.mediaType === "video"} loop={post.mediaType === "video"} muted />
+                  <MediaFrame media={{ type: content.media[0]?.type ?? "image", url: content.media[0]?.url ?? content.image, thumbnail: content.media[0]?.thumbnail }} alt="" className="w-full h-full" autoPlay={content.media[0]?.type === "video"} loop={content.media[0]?.type === "video"} muted />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-white truncate">{content.caption.slice(0, 50)}...</p>
@@ -58,7 +58,7 @@ export function DiscoverScreen() {
               {unifiedFeed.slice(0, 6).map((content, i) => (
                 <button key={content.id} onClick={() => router.push(`/post/${content.id}`)} className="w-full text-left overflow-hidden rounded-xl bg-surface-900 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
                   <div className="aspect-square relative">
-                    <MediaFrame media={{ type: post.mediaType ?? "image", url: post.mediaUrl ?? post.image, thumbnail: post.thumbnail }} alt="" className="w-full h-full" autoPlay={post.mediaType === "video"} loop={post.mediaType === "video"} muted />
+                    <MediaFrame media={{ type: content.media[0]?.type ?? "image", url: content.media[0]?.url ?? content.image, thumbnail: content.media[0]?.thumbnail }} alt="" className="w-full h-full" autoPlay={content.media[0]?.type === "video"} loop={content.media[0]?.type === "video"} muted />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     <div className="absolute bottom-2 left-2 right-2">
                       <p className="text-white font-semibold text-xs">{content.creator.name}</p>
