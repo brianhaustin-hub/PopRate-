@@ -5,6 +5,7 @@ import { Bell, ChevronRight, Flame, Plus, Search, Share2, Sparkles, Swords, Trop
 import { useRouter } from 'next/navigation';
 import { posts } from '@/data/mock';
 import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challengeMemories';
+import { getUnifiedFeed } from '@/data/content';
 import { FeedTab } from '@/types';
 
 const challengeSamples = [
@@ -19,6 +20,7 @@ export function HomeScreen() {
   const [challengeMemories,setChallengeMemories]=useState(getChallengeMemories());
   useEffect(() => subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories())), []);
   const visiblePosts=useMemo(()=>activeTab==='following'?posts.filter(p=>p.creator.isFollowing):posts.slice(0,4),[activeTab]);
+  const unifiedFeed = useMemo(() => getUnifiedFeed(), [challengeMemories]);
 
   return <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#21102b_0,#09090b_38%)] pb-24">
     <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-black/60 px-4 pb-3 pt-4 backdrop-blur-2xl">
@@ -55,7 +57,7 @@ export function HomeScreen() {
           <div className="flex items-center justify-between px-4 py-3"><span className="text-xs text-white/45">{(memory.votesA + memory.votesB).toLocaleString()} votes · finished arena</span><span className="text-xs font-bold text-pop-300">Result</span></div>
         </button>
       ))}
-      <section><div className="mb-3 flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Discover</p><h2 className="text-lg font-black text-white">More from PopRate</h2></div><Sparkles size={18} className="text-neon-400"/></div><div className="grid grid-cols-2 gap-3">{visiblePosts.slice(0,4).map(post=><article key={post.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035]"><div className="aspect-[4/5] overflow-hidden"><img src={post.image} alt="" className="h-full w-full object-cover"/></div><div className="p-3"><p className="truncate text-sm font-bold text-white">{post.creator.displayName}</p><div className="mt-1 flex items-center gap-1 text-[11px] text-white/40"><Trophy size={12}/> {post.rating.toFixed(1)}</div></div></article>)}</div></section>
+      <section><div className="mb-3 flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Discover</p><h2 className="text-lg font-black text-white">More from PopRate</h2></div><Sparkles size={18} className="text-neon-400"/></div><div className="grid grid-cols-2 gap-3">{visiblePosts.slice(0,4).map(post=><button type="button" key={post.id} onClick={()=>router.push(`/post/${post.id}`)} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035] text-left"><div className="aspect-[4/5] overflow-hidden"><img src={post.image} alt="" className="h-full w-full object-cover"/></div><div className="p-3"><p className="truncate text-sm font-bold text-white">{post.creator.displayName}</p><div className="mt-1 flex items-center gap-1 text-[11px] text-white/40"><Trophy size={12}/> {post.rating.toFixed(1)}</div></div></button>)}</div></section>
     </main>
   </div>;
 }
