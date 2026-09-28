@@ -68,3 +68,25 @@ export function challengeProgress(status: ChallengeStatus) {
   const states: ChallengeStatus[] = ['waiting_for_opponent', 'opponent_joined', 'ready', 'live', 'voting_closed', 'result'];
   return states.indexOf(status);
 }
+
+
+export function setChallengeStatus(id: string, status: ChallengeStatus) {
+  const challenge = getChallengeWorkflow(id);
+  if (!challenge) return null;
+  challenge.status = status;
+  return challenge;
+}
+
+export function advanceChallenge(id: string) {
+  const challenge = getChallengeWorkflow(id);
+  if (!challenge) return null;
+  const next: Partial<Record<ChallengeStatus, ChallengeStatus>> = {
+    opponent_joined: 'ready',
+    ready: 'live',
+    live: 'voting_closed',
+    voting_closed: 'result',
+  };
+  const nextStatus = next[challenge.status];
+  if (nextStatus) challenge.status = nextStatus;
+  return challenge;
+}
