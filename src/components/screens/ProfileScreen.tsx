@@ -155,7 +155,7 @@ export function ProfileScreen() {
                       <span className="text-xs text-white/45">{memory.votesA + memory.votesB} votes · expires {Math.max(1, Math.ceil((new Date(memory.expiresAt).getTime() - Date.now()) / 3600000))}h</span>
                       <span className="text-xs font-bold text-pop-300">Arena result</span>
                     </div>
-                  </article>
+                  </button>
                 ))}
                 <div className="grid grid-cols-3 gap-1.5">
                   {Array.from({ length: 9 }).map((_, i) => (
