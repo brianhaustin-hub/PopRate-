@@ -22,6 +22,7 @@ export interface ChallengeMemory {
   saves: number;
   shares: number;
   liked: boolean;
+  saved: boolean;
 }
 
 const memories: ChallengeMemory[] = [];
@@ -59,7 +60,7 @@ export function subscribeChallengeMemories(listener: () => void) {
 
 function emit() { listeners.forEach((listener) => listener()); }
 
-type PublishChallengeMemoryInput = Omit<ChallengeMemory, 'id' | 'publishedAt' | 'expiresAt' | 'visible' | 'likes' | 'comments' | 'saves' | 'shares' | 'liked'>;
+type PublishChallengeMemoryInput = Omit<ChallengeMemory, 'id' | 'publishedAt' | 'expiresAt' | 'visible' | 'likes' | 'comments' | 'saves' | 'shares' | 'liked' | 'saved'>;
 
 export function publishChallengeMemory(input: PublishChallengeMemoryInput) {
   const existing = memories.find((item) => item.challengeId === input.challengeId);
@@ -72,6 +73,7 @@ export function publishChallengeMemory(input: PublishChallengeMemoryInput) {
     expiresAt,
     visible: true,
     liked: existing?.liked ?? false,
+    saved: existing?.saved ?? false,
     likes: existing?.likes ?? 0,
     comments: existing?.comments ?? [],
     saves: existing?.saves ?? 0,
@@ -110,7 +112,8 @@ export function addChallengeMemoryComment(challengeId: string, comment: string) 
 export function toggleChallengeMemorySave(challengeId: string) {
   const item = memories.find((memory) => memory.challengeId === challengeId);
   if (!item || !item.visible) return;
-  item.saves = item.saves ? 0 : 1;
+  item.saved = !item.saved;
+  item.saves = Math.max(0, item.saves + (item.saved ? 1 : -1));
   emit();
   return item;
 }
