@@ -142,7 +142,7 @@ function WatchVideoCard({
               onToast('Shared');
             } catch {}
           }} className="flex flex-col items-center gap-1"><Share2 size={23}/><span className="text-[10px] font-bold">{formatNumber(content.kind === 'challenge_memory' ? engagement.shares : content.shares)}</span></button>
-          <button onClick={() => router.push('/challenge/new')} className="grid h-11 w-11 place-items-center rounded-full bg-white text-black shadow-xl"><Swords size={20}/></button>
+          <button onClick={() => { recordBehavior({ type: 'challenge_open', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username }); router.push('/challenge/new'); }} className="grid h-11 w-11 place-items-center rounded-full bg-white text-black shadow-xl"><Swords size={20}/></button>
         </div>
 
         {ratingOpen === content.id && (
