@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { ArrowUpRight, Bookmark, Camera, Check, Edit3, Link as LinkIcon, MoreHorizontal, Settings, Share2, Star, Trophy, UserPlus } from 'lucide-react';
 import { ProfileTab } from '@/types';
 import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challengeMemories';
-import { getUnifiedFeed } from '@/data/content';
+import { getUnifiedProfileContent } from '@/data/content';
 import { UnifiedContentCard } from '@/components/content/UnifiedContentCard';
 
 const user = users[0];
@@ -28,7 +28,7 @@ export function ProfileScreen() {
   const [challengeMemories, setChallengeMemories] = useState(getChallengeMemories());
 
   useEffect(() => subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories())), []);
-  const unifiedFeed = useMemo(() => getUnifiedFeed(), [challengeMemories]);
+  const unifiedFeed = useMemo(() => getUnifiedProfileContent(), [challengeMemories]);
   const profileContent = useMemo(() => unifiedFeed.filter(content => content.creator.username === user.username || posts.some(post => post.id === content.id && post.creator.username === user.username)), [unifiedFeed]);
 
   const copyProfile = async () => {
