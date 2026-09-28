@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Check, ChevronRight, Clock3, Heart, MessageCircle, MoreHorizontal, Share2, ShieldAlert, Trophy, UserX, Users, Zap } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, Clock3, Heart, MessageCircle, MoreHorizontal, Share2, ShieldAlert, Trophy, UserX, Users, Zap, Swords } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { getChallengeWorkflow } from '@/data/challengeWorkflow';
+import { MediaFrame } from '@/components/ui/MediaFrame';
 
 type Mode = 'live' | 'result';
 
@@ -81,8 +82,8 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
         </section>
 
         <section className="mt-6 grid grid-cols-2 gap-2">
-          <VoteSide label="ALEX" image={workflow?.creatorSide || 'https://picsum.photos/seed/poprate-live-a/700/900'} percent={percentA} votes={votesA} selected={selected === 'a'} disabled={voted || isResult} winner={isResult && votesA > votesB} onSelect={() => setSelected('a')} />
-          <VoteSide label={workflow?.opponent?.name ? workflow.opponent.name.toUpperCase() : "B"} image={workflow?.opponentSide || 'https://picsum.photos/seed/poprate-live-b/700/900'} percent={percentB} votes={votesB} selected={selected === 'b'} disabled={voted || isResult} winner={isResult && votesB > votesA} onSelect={() => setSelected('b')} />
+          <VoteSide label="ALEX" image={workflow?.creatorSide || 'https://picsum.photos/seed/poprate-live-a/700/900'} mediaType={workflow?.creatorMediaType} mediaUrl={workflow?.creatorMediaUrl} thumbnail={workflow?.creatorThumbnail} percent={percentA} votes={votesA} selected={selected === 'a'} disabled={voted || isResult} winner={isResult && votesA > votesB} onSelect={() => setSelected('a')} />
+          <VoteSide label={workflow?.opponent?.name ? workflow.opponent.name.toUpperCase() : "B"} image={workflow?.opponentSide || 'https://picsum.photos/seed/poprate-live-b/700/900'} mediaType={workflow?.opponentMediaType} mediaUrl={workflow?.opponentMediaUrl} thumbnail={workflow?.opponentThumbnail} percent={percentB} votes={votesB} selected={selected === 'b'} disabled={voted || isResult} winner={isResult && votesB > votesA} onSelect={() => setSelected('b')} />
         </section>
 
         {!isResult && !voted && (
@@ -145,10 +146,10 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   );
 }
 
-function VoteSide({ label, image, percent, votes, selected, disabled, winner, onSelect }: { label: string; image: string; percent: number; votes: number; selected: boolean; disabled: boolean; winner: boolean; onSelect: () => void }) {
+function VoteSide({ label, image, mediaType = 'image', mediaUrl, thumbnail, percent, votes, selected, disabled, winner, onSelect }: { label: string; image: string; mediaType?: 'image' | 'video'; mediaUrl?: string; thumbnail?: string; percent: number; votes: number; selected: boolean; disabled: boolean; winner: boolean; onSelect: () => void }) {
   return (
     <button disabled={disabled} onClick={onSelect} className={`group relative overflow-hidden rounded-[1.5rem] border text-left transition-all ${selected ? 'border-pop-500 ring-2 ring-pop-500/30' : winner ? 'border-pop-500/60' : 'border-white/[.08]'} ${disabled ? '' : 'active:scale-[.98]'}`}>
-      <img src={image} alt={`${label} challenge side`} className="h-[23rem] w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+      <MediaFrame media={{ type: mediaType, url: mediaUrl ?? image, thumbnail }} alt={`${label} challenge side`} className="h-[23rem] w-full" videoClassName="transition-transform duration-500 group-hover:scale-[1.02]" autoPlay={mediaType === "video"} loop={mediaType === "video"} muted />
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-3 pt-16">
         <div className="flex items-end justify-between gap-2"><div><p className="text-[10px] font-black tracking-[.16em] text-white/60">{label}</p><p className="mt-1 text-xl font-black">{percent}%</p></div>{winner && <span className="rounded-full bg-pop-500 px-2 py-1 text-[9px] font-black">WINNER</span>}</div>
         <p className="mt-1 text-[10px] text-white/45">{votes.toLocaleString()} votes</p>
