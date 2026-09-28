@@ -15,6 +15,7 @@ export type BehaviorType =
   | 'unsave'
   | 'share'
   | 'follow'
+  | 'unfollow'
   | 'profile_open'
   | 'challenge_open'
   | 'search_click'
@@ -75,7 +76,7 @@ export function getInterestScore(category: string) {
     const weights: Record<BehaviorType, number> = {
       impression: 0.05, view_start: 0.15, view_complete: 1.8, watch: 0.25,
       like: 2.5, unlike: -1.5, rate: 2.2, comment: 2.8, save: 3.5, unsave: -2,
-      share: 3, follow: 2.5, profile_open: 0.8, follow: 2.5, unfollow: -1.5, challenge_open: 1.5, search_click: 1.2,
+      share: 3, follow: 2.5, unfollow: -1.5, profile_open: 0.8, challenge_open: 1.5, search_click: 1.2,
     };
     score += (weights[event.type] ?? 0) * decay;
     if (event.durationMs) score += Math.min(event.durationMs / 30000, 3) * decay;
