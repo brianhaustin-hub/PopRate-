@@ -280,6 +280,28 @@ export const posts: Post[] = [
   },
 ];
 
+
+posts.push({
+  id: 'v1',
+  creator: users[4],
+  image: 'https://picsum.photos/seed/video-cover/800/1200',
+  mediaType: 'video',
+  mediaUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+  thumbnail: 'https://picsum.photos/seed/video-cover/800/1200',
+  caption: 'Motion, color and a little chaos. Rate the moment 🎥✨ #motion #video #creative',
+  tags: ['motion', 'video', 'creative'],
+  category: 'Motion',
+  rating: 9.2,
+  ratingCount: 1820,
+  likes: 19400,
+  comments: 421,
+  shares: 1320,
+  saves: 7800,
+  isLiked: false,
+  isSaved: false,
+  createdAt: '2026-09-28T08:00:00Z',
+});
+
 export const battles: Battle[] = [
   {
     id: 'b1',
