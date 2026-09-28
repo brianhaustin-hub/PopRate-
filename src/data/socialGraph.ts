@@ -8,8 +8,12 @@ import { addActivity } from '@/data/activityStore';
 const currentUserId = '1';
 const followed = new Set<string>(users.filter(user => user.isFollowing).map(user => user.id));
 const listeners = new Set<() => void>();
+let version = 0;
 
-function emit() { listeners.forEach(listener => listener()); }
+function emit() {
+  version += 1;
+  listeners.forEach(listener => listener());
+}
 
 export function isFollowing(userId: string) {
   return followed.has(userId);
@@ -17,25 +21,32 @@ export function isFollowing(userId: string) {
 
 export function toggleFollow(userId: string) {
   if (userId === currentUserId) return false;
+
   const wasFollowing = followed.has(userId);
   if (wasFollowing) followed.delete(userId);
   else followed.add(userId);
+
   const next = followed.has(userId);
   const user = users.find(item => item.id === userId);
+
   if (user) {
     recordBehavior({
       type: next ? 'follow' : 'unfollow',
       creatorUsername: user.username,
       dedupeKey: next ? undefined : undefined,
     });
-    if (next) addActivity({
-      type: 'follow',
-      title: 'You followed ' + user.displayName,
-      message: 'Their PopRates will shape your feed.',
-      image: user.avatar,
-      href: '/user/' + user.username,
-    });
+
+    if (next) {
+      addActivity({
+        type: 'follow',
+        title: 'You followed ' + user.displayName,
+        message: 'Their PopRates will shape your feed.',
+        image: user.avatar,
+        href: '/user/' + user.username,
+      });
+    }
   }
+
   emit();
   return next;
 }
@@ -54,7 +65,7 @@ export function subscribeSocialGraph(listener: () => void) {
 }
 
 export function useSocialGraphVersion() {
-  return useSyncExternalStore(subscribeSocialGraph, () => followed.size, () => followed.size);
+  return useSyncExternalStore(subscribeSocialGraph, () => version, () => 0);
 }
 
 export const currentUser = users.find(user => user.id === currentUserId) ?? users[0];
