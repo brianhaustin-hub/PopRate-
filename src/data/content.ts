@@ -1,0 +1,118 @@
+import { posts } from '@/data/mock';
+import { getChallengeMemories, type ChallengeMemory } from '@/data/challengeMemories';
+import type { Post } from '@/types';
+
+export type ContentKind = 'post' | 'challenge_memory';
+
+export type UnifiedContent = {
+  id: string;
+  kind: ContentKind;
+  createdAt: string;
+  category: string;
+  title: string;
+  caption: string;
+  image: string;
+  media: {
+    type: 'image' | 'video';
+    url: string;
+    thumbnail?: string;
+  }[];
+  creator: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  rating: number;
+  ratingCount: number;
+  expiresAt?: string;
+  challengeId?: string;
+};
+
+function postToContent(post: Post): UnifiedContent {
+  const media = post.media?.length
+    ? post.media
+    : [{
+        type: post.mediaType ?? 'image',
+        url: post.mediaUrl ?? post.image,
+        thumbnail: post.thumbnail,
+      }];
+
+  return {
+    id: post.id,
+    kind: 'post',
+    createdAt: post.createdAt,
+    category: post.category,
+    title: post.creator.displayName,
+    caption: post.caption,
+    image: post.image,
+    media,
+    creator: {
+      name: post.creator.displayName,
+      username: post.creator.username,
+      avatar: post.creator.avatar,
+    },
+    likes: post.likes,
+    comments: post.comments,
+    shares: post.shares,
+    saves: post.saves,
+    rating: post.rating,
+    ratingCount: post.ratingCount,
+    challengeId: post.challengeId,
+  };
+}
+
+function memoryToContent(memory: ChallengeMemory): UnifiedContent {
+  const totalVotes = memory.votesA + memory.votesB;
+  return {
+    id: memory.id,
+    kind: 'challenge_memory',
+    createdAt: memory.publishedAt,
+    category: memory.category,
+    title: memory.title,
+    caption: 'Finished challenge memory · the crowd has decided.',
+    image: memory.creatorMedia.url,
+    media: [memory.creatorMedia, memory.opponentMedia],
+    creator: {
+      name: memory.creatorName,
+      username: memory.creatorUsername,
+      avatar: memory.creatorImage,
+    },
+    likes: memory.likes,
+    comments: memory.comments.length,
+    shares: memory.shares,
+    saves: memory.saves,
+    rating: totalVotes ? Number(((memory.votesA / totalVotes) * 10).toFixed(1)) : 0,
+    ratingCount: totalVotes,
+    expiresAt: memory.expiresAt,
+    challengeId: memory.challengeId,
+  };
+}
+
+export function getUnifiedContent(id: string): UnifiedContent | null {
+  const memory = getChallengeMemories().find((item) => item.id === id);
+  if (memory) return memoryToContent(memory);
+
+  const post = posts.find((item) => item.id === id);
+  return post ? postToContent(post) : null;
+}
+
+export function getUnifiedFeed(): UnifiedContent[] {
+  const normalPosts = posts.map(postToContent);
+  const memories = getChallengeMemories()
+    .filter((memory) => memory.placement === 'profile_and_feed')
+    .map(memoryToContent);
+
+  return [...memories, ...normalPosts].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+}
+
+export function getUnifiedVideos(): UnifiedContent[] {
+  return getUnifiedFeed().filter((content) =>
+    content.media.some((media) => media.type === 'video'),
+  );
+}
