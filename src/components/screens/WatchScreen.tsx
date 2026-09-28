@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Heart, MessageCircle, Share2, Bookmark, Star, Volume2, VolumeX, Swords, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { posts } from '@/data/mock';
+import { getUnifiedVideos } from '@/data/content';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { formatNumber } from '@/lib/utils';
 import { ratePost, toggleLike, toggleSave, usePostEngagement } from '@/data/postEngagement';
@@ -68,7 +69,8 @@ function WatchVideoCard({
 
 export function WatchScreen() {
   const router = useRouter();
-  const videos = useMemo(() => posts.filter(post => post.mediaType === 'video'), []);
+  const unifiedVideos = useMemo(() => getUnifiedVideos(), []);
+  const videos = useMemo(() => unifiedVideos.filter(content => content.media[0]?.type === 'video').map(content => posts.find(post => post.id === content.id)).filter(Boolean), [unifiedVideos]);
   const [activeIndex,setActiveIndex]=useState(0), [muted,setMuted]=useState(true), [ratingOpen,setRatingOpen]=useState<string|null>(null), [commentOpen,setCommentOpen]=useState<string|null>(null), [comment,setComment]=useState(''), [toast,setToast]=useState<string|null>(null), [ratingMessage,setRatingMessage]=useState<string|null>(null);
   const containerRef=useRef<HTMLDivElement>(null);
 
