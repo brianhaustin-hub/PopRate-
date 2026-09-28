@@ -10,6 +10,8 @@ import { rateUnifiedContent, useUnifiedEngagement } from '@/data/contentEngageme
 import { addChallengeMemoryComment } from '@/data/challengeMemories';
 import { addPostComment, useContentComments } from '@/data/contentComments';
 import { motion, AnimatePresence } from 'framer-motion';
+import { recordBehavior } from '@/data/behaviorStore';
+import { subscribePublishedContent } from '@/data/contentCreation';
 
 type WatchContent = ReturnType<typeof getUnifiedVideos>[number];
 
@@ -55,6 +57,28 @@ function WatchVideoCard({
     content.kind,
   );
   const media = content.media.find((item) => item.type === 'video') ?? content.media[0];
+  const watchStartedAt = useRef<number | null>(null);
+  const completedRef = useRef(false);
+
+  useEffect(() => {
+    if (!active) return;
+    watchStartedAt.current = Date.now();
+    completedRef.current = false;
+    recordBehavior({ type: 'view_start', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username, dedupeKey: `watch-start:${content.id}:${Math.floor(Date.now() / 60000)}` });
+    return () => {
+      const durationMs = watchStartedAt.current ? Date.now() - watchStartedAt.current : 0;
+      if (durationMs > 900) recordBehavior({ type: 'watch', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username, durationMs });
+      watchStartedAt.current = null;
+    };
+  }, [active, content.id, content.kind, content.category, content.creator.username]);
+
+  const handleProgress = (currentTime: number, duration: number) => {
+    if (!duration || completedRef.current) return;
+    if (currentTime / duration >= 0.9) {
+      completedRef.current = true;
+      recordBehavior({ type: 'view_complete', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username, durationMs: watchStartedAt.current ? Date.now() - watchStartedAt.current : undefined, dedupeKey: `complete:${content.id}` });
+    }
+  };
 
   const submitComment = () => {
     const value = comment.trim();
@@ -65,6 +89,7 @@ function WatchVideoCard({
     } else {
       addPostComment(content.id, value);
     }
+    recordBehavior({ type: 'comment', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username });
     setComment('');
     setCommentOpen(null);
     onToast('Comment posted');
@@ -80,6 +105,7 @@ function WatchVideoCard({
         active={active}
         loop
         muted={muted}
+        onProgress={handleProgress}
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/35" />
       <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 pt-[max(16px,env(safe-area-inset-top))]">
@@ -90,7 +116,7 @@ function WatchVideoCard({
 
       <div className="absolute bottom-0 left-0 right-0 z-10 flex items-end gap-4 px-4 pb-[max(28px,env(safe-area-inset-bottom))]">
         <div className="min-w-0 flex-1 pb-1">
-          <button onClick={() => router.push('/user/' + content.creator.username)} className="flex items-center gap-2">
+          <button onClick={() => { recordBehavior({ type: 'profile_open', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username }); router.push('/user/' + content.creator.username); }} className="flex items-center gap-2">
             <img src={content.creator.avatar} alt="" className="h-9 w-9 rounded-full border border-white/30 object-cover"/>
             <span className="text-sm font-black">@{content.creator.username}</span>
           </button>
@@ -103,15 +129,16 @@ function WatchVideoCard({
         </div>
 
         <div className="flex w-12 flex-col items-center gap-5 pb-1">
-          <button onClick={engagement.toggleLike} className="flex flex-col items-center gap-1 active:scale-90"><Heart size={26} fill={engagement.liked ? 'currentColor' : 'none'} className={engagement.liked ? 'text-red-400' : ''}/><span className="text-[10px] font-bold">{formatNumber(engagement.likes)}</span></button>
+          <button onClick={() => { const next = !engagement.liked; engagement.toggleLike(); recordBehavior({ type: next ? 'like' : 'unlike', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username }); }} className="flex flex-col items-center gap-1 active:scale-90"><Heart size={26} fill={engagement.liked ? 'currentColor' : 'none'} className={engagement.liked ? 'text-red-400' : ''}/><span className="text-[10px] font-bold">{formatNumber(engagement.likes)}</span></button>
           <button onClick={() => setCommentOpen(content.id)} className="flex flex-col items-center gap-1"><MessageCircle size={25}/><span className="text-[10px] font-bold">{formatNumber(comments.length || content.comments)}</span></button>
           <button onClick={() => setRatingOpen(content.id)} className="flex flex-col items-center gap-1"><Star size={25} fill={engagement.rating ? 'currentColor' : 'none'} /><span className="text-[10px] font-bold">{engagement.rating ? engagement.rating + '/10' : 'Rate'}</span></button>
-          <button onClick={engagement.toggleSave} className="flex flex-col items-center gap-1"><Bookmark size={24} fill={engagement.saved ? 'currentColor' : 'none'}/><span className="text-[10px] font-bold">{formatNumber(engagement.saves)}</span></button>
+          <button onClick={() => { const next = !engagement.saved; engagement.toggleSave(); recordBehavior({ type: next ? 'save' : 'unsave', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username }); }} className="flex flex-col items-center gap-1"><Bookmark size={24} fill={engagement.saved ? 'currentColor' : 'none'}/><span className="text-[10px] font-bold">{formatNumber(engagement.saves)}</span></button>
           <button onClick={async () => {
             const url = window.location.origin + '/post/' + content.id;
             try {
               if (navigator.share) await navigator.share({ title: 'PopRate', text: content.caption, url });
               else await navigator.clipboard.writeText(url);
+              recordBehavior({ type: 'share', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username });
               onToast('Shared');
             } catch {}
           }} className="flex flex-col items-center gap-1"><Share2 size={23}/><span className="text-[10px] font-bold">{formatNumber(content.kind === 'challenge_memory' ? engagement.shares : content.shares)}</span></button>
@@ -148,7 +175,8 @@ function WatchVideoCard({
 
 export function WatchScreen() {
   const router = useRouter();
-  const videos = useMemo(() => getUnifiedVideos().filter(content => content.media.some(media => media.type === 'video')), []);
+  const [contentVersion, setContentVersion] = useState(0);
+  const videos = useMemo(() => getUnifiedVideos().filter(content => content.media.some(media => media.type === 'video')), [contentVersion]);
   const [activeIndex,setActiveIndex]=useState(0);
   const [muted,setMuted]=useState(true);
   const [ratingOpen,setRatingOpen]=useState<string|null>(null);
@@ -157,6 +185,8 @@ export function WatchScreen() {
   const [toast,setToast]=useState<string|null>(null);
   const [ratingMessage,setRatingMessage]=useState<string|null>(null);
   const containerRef=useRef<HTMLDivElement>(null);
+
+  useEffect(() => subscribePublishedContent(() => setContentVersion(value => value + 1)), []);
 
   useEffect(() => {
     if (!toast && !ratingMessage) return;
@@ -177,6 +207,7 @@ export function WatchScreen() {
     if(!content)return;
     const engagementId=content.kind === 'challenge_memory' ? (content.challengeId ?? content.id) : content.id;
     rateUnifiedContent(content.kind, engagementId, score);
+    recordBehavior({ type: 'rate', contentId: content.id, kind: content.kind, category: content.category, creatorUsername: content.creator.username, score });
     setRatingMessage(`Rated ${score}/10`);
   };
 
