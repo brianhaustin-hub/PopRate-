@@ -99,6 +99,7 @@ export function addPostComment(postId: string, text: string, sticker?: string, p
     parentId,
   });
   state.set(postId, list);
+  if (parentId) replyCounts.set(parentId, (replyCounts.get(parentId) ?? 0) + 1);
   const post = posts.find((item) => item.id === postId);
   if (post) post.comments = list.length;
   recordBehavior({
