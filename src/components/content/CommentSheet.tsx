@@ -40,7 +40,7 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
   const [selectedSticker, setSelectedSticker] = useState<string>();
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
-  const [stickerTab, setStickerTab] = useState<'trending' | 'reactions' | 'hype' | 'love'>('trending');
+  const [stickerTab, setStickerTab] = useState<'trending' | 'reactions' | 'hype' | 'love' | 'saved'>('trending');
   const [stickerQuery, setStickerQuery] = useState('');
   const [favoriteStickers, setFavoriteStickers] = useState<string[]>(['🔥','😂','❤️']);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -157,25 +157,24 @@ export function CommentSheet({ contentId, kind = 'post', open, onClose, onToast 
                     ['reactions','Reactions',Smile],
                     ['hype','Hype',Sparkles],
                     ['love','Love',Heart],
+                    ['saved','Saved',Star],
                   ].map(([key,label,Icon]) => (
                     <button key={key} onClick={() => setStickerTab(key as typeof stickerTab)} className={'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-black ' + (stickerTab === key ? 'bg-pop-500 text-black' : 'bg-white/[.05] text-white/45')}>
                       <Icon size={12}/>{label}
                     </button>
                   ))}
-                  <button onClick={() => setStickerTab('trending')} className="ml-auto flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-black text-white/40"><Star size={12}/> Saved</button>
+                  <button onClick={() => setStickerTab('saved')} className="ml-auto flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-[10px] font-black text-white/40"><Star size={12}/> Saved</button>
                 </div>
                 <div className="max-h-52 overflow-y-auto px-3 pb-3">
                   <div className="grid grid-cols-6 gap-1.5">
-                    {(stickerQuery ? Object.values(stickerPacks).flat().filter(s => s.toLowerCase().includes(stickerQuery.toLowerCase())) : stickerPacks[stickerTab]).map((sticker, index) => (
+                    {(stickerQuery ? Object.values(stickerPacks).flat().filter(s => s.toLowerCase().includes(stickerQuery.toLowerCase())) : stickerTab === 'saved' ? favoriteStickers : stickerPacks[stickerTab]).map((sticker, index) => (
                       <button key={sticker + index} onClick={() => { setSelectedSticker(sticker); setFavoriteStickers(previous => previous.includes(sticker) ? previous : [...previous.slice(-7), sticker]); setStickerOpen(false); setExpanded(true); }} className="group relative grid aspect-square place-items-center rounded-2xl border border-white/5 bg-white/[.035] text-2xl transition hover:-translate-y-0.5 hover:bg-white/[.08] active:scale-90">
                         <span>{sticker}</span>
                         <span className="pointer-events-none absolute bottom-1 right-1 opacity-0 transition group-hover:opacity-100"><Star size={9} className="text-white/35"/></span>
                       </button>
                     ))}
                   </div>
-                  {!stickerQuery && stickerTab === 'trending' && (
-                    <div className="mt-3 rounded-2xl bg-white/[.035] px-3 py-2 text-[9px] font-bold text-white/30">Your favorites: {favoriteStickers.join(' ')}</div>
-                  )}
+                  {!stickerQuery && stickerTab === 'trending' && <div className="mt-3 rounded-2xl bg-white/[.035] px-3 py-2 text-[9px] font-bold text-white/30">Popular on PopRate right now</div>}
                 </div>
               </motion.div>
             )}
