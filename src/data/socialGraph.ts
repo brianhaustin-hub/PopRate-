@@ -2,6 +2,8 @@
 
 import { useSyncExternalStore } from 'react';
 import { users } from '@/data/mock';
+import { recordBehavior } from '@/data/behaviorStore';
+import { addActivity } from '@/data/activityStore';
 
 const currentUserId = '1';
 const followed = new Set<string>(users.filter(user => user.isFollowing).map(user => user.id));
@@ -15,10 +17,27 @@ export function isFollowing(userId: string) {
 
 export function toggleFollow(userId: string) {
   if (userId === currentUserId) return false;
-  if (followed.has(userId)) followed.delete(userId);
+  const wasFollowing = followed.has(userId);
+  if (wasFollowing) followed.delete(userId);
   else followed.add(userId);
+  const next = followed.has(userId);
+  const user = users.find(item => item.id === userId);
+  if (user) {
+    recordBehavior({
+      type: next ? 'follow' : 'unlike',
+      creatorUsername: user.username,
+      dedupeKey: next ? undefined : undefined,
+    });
+    if (next) addActivity({
+      type: 'follow',
+      title: 'You followed ' + user.displayName,
+      message: 'Their PopRates will shape your feed.',
+      image: user.avatar,
+      href: '/user/' + user.username,
+    });
+  }
   emit();
-  return followed.has(userId);
+  return next;
 }
 
 export function getFollowedUserIds() {
