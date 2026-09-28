@@ -26,5 +26,8 @@
     "autoprefixer": "^10.4.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
