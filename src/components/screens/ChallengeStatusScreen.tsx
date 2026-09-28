@@ -25,7 +25,7 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
   const params = useParams<{ id: string }>();
   const challengeId = params?.id || 'new';
   const workflow = challengeId === 'new' ? null : getChallengeWorkflow(challengeId);
-  const [state, setState] = useState<State>(() => { const status = workflow?.status; if (status === 'waiting_for_opponent') return 'waiting'; if (status === 'opponent_joined') return 'opponent_joined'; if (status === 'ready') return 'ready'; if (status === 'live') return 'live'; if (status === 'voting_closed') return 'closed'; if (status === 'result') return 'result'; return initialState; });
+  const [state, setState] = useState<State>(() => { const status = workflow?.status; if (status === 'waiting_for_opponent' || status === 'opponent_invited') return 'waiting'; if (status === 'opponent_joined') return 'opponent_joined'; if (status === 'ready') return 'ready'; if (status === 'live') return 'live'; if (status === 'voting_closed') return 'closed'; if (status === 'result') return 'result'; return initialState; });
   const [copied, setCopied] = useState(false);
   const current = useMemo(() => states.find(item => item.id === state)!, [state]);
   const terminal = ['declined', 'cancelled', 'expired'].includes(state);
@@ -108,7 +108,7 @@ export function ChallengeStatusScreen({ initialState = 'waiting' }: { initialSta
         <div className="mt-6 rounded-2xl border border-white/[.06] p-4">
           <p className="text-[10px] font-black uppercase tracking-[.15em] text-white/30">Prototype state controls</p>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {states.slice(0, 6).map(item => <button key={item.id} onClick={() => syncState(item.id) className={`shrink-0 rounded-full px-3 py-2 text-[10px] font-bold ${state === item.id ? 'bg-white text-black' : 'bg-white/5 text-white/45'}`}>{item.label}</button>)}
+            {states.slice(0, 6).map(item => <button key={item.id} onClick={() => syncState(item.id)} className={`shrink-0 rounded-full px-3 py-2 text-[10px] font-bold ${state === item.id ? 'bg-white text-black' : 'bg-white/5 text-white/45'}`}>{item.label}</button>)}
           </div>
           <div className="mt-2 flex gap-2">
             {states.slice(6).map(item => <button key={item.id} onClick={() => setState(item.id)} className="rounded-full bg-white/5 px-3 py-2 text-[10px] font-bold text-white/40">{item.label}</button>)}
