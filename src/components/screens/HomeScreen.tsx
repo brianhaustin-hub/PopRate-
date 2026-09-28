@@ -53,7 +53,7 @@ export function HomeScreen() {
               : <img key={i} src={media.url} alt="" className="aspect-[4/5] w-full object-cover" />)}
           </div>
           <div className="flex items-center justify-between px-4 py-3"><span className="text-xs text-white/45">{(memory.votesA + memory.votesB).toLocaleString()} votes · finished arena</span><span className="text-xs font-bold text-pop-300">Result</span></div>
-        </section>
+        </button>
       ))}
       <section><div className="mb-3 flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Discover</p><h2 className="text-lg font-black text-white">More from PopRate</h2></div><Sparkles size={18} className="text-neon-400"/></div><div className="grid grid-cols-2 gap-3">{visiblePosts.slice(0,4).map(post=><article key={post.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.035]"><div className="aspect-[4/5] overflow-hidden"><img src={post.image} alt="" className="h-full w-full object-cover"/></div><div className="p-3"><p className="truncate text-sm font-bold text-white">{post.creator.displayName}</p><div className="mt-1 flex items-center gap-1 text-[11px] text-white/40"><Trophy size={12}/> {post.rating.toFixed(1)}</div></div></article>)}</div></section>
     </main>
