@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, Check, ChevronRight, Clock3, Heart, MessageCircle, MoreHorizontal, Share2, ShieldAlert, Trophy, UserX, Users, Zap, Swords } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { getChallengeWorkflow } from '@/data/challengeWorkflow';
@@ -41,7 +41,7 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
 
   const submitVote = () => {
     if (!selected || voted || isResult) return;
-    if (workflow) { workflow.votesA = selected === 'a' ? workflow.votesA + 1 : workflow.votesA; workflow.votesB = selected === 'b' ? workflow.votesB + 1 : workflow.votesB; workflow.votesA + workflow.votesB; } setVoted(true);
+    if (workflow) { workflow.votesA = selected === 'a' ? workflow.votesA + 1 : workflow.votesA; workflow.votesB = selected === 'b' ? workflow.votesB + 1 : workflow.votesB;  } setVoted(true);
   };
 
   if (unavailable) return (
