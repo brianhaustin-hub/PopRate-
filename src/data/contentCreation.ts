@@ -2,6 +2,7 @@
 
 import { posts } from '@/data/mock';
 import type { Post } from '@/types';
+import { currentUser } from '@/data/socialGraph';
 
 const listeners = new Set<() => void>();
 
@@ -15,19 +16,7 @@ export function publishPost(input: {
 }) {
   const post: Post = {
     id: 'post-' + Date.now().toString(36),
-    creator: {
-      id: '1',
-      username: 'you',
-      displayName: 'You',
-      avatar: 'https://picsum.photos/seed/you/200/200',
-      bio: '',
-      followers: 0,
-      following: 0,
-      isFollowing: false,
-      averageRating: 0,
-      ratingsCount: 0,
-      joinedAt: new Date().toISOString(),
-    },
+    creator: currentUser,
     image: input.mediaType === 'image' ? input.mediaUrl : (input.thumbnail ?? input.mediaUrl),
     mediaType: input.mediaType,
     mediaUrl: input.mediaUrl,
