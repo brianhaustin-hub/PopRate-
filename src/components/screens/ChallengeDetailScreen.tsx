@@ -34,6 +34,11 @@ export function ChallengeDetailScreen({ mode = 'live' }: { mode?: Mode }) {
   const [memorySaved, setMemorySaved] = useState((memory?.saves ?? 0) > 0);
 
   const isResult = mode === 'result';
+  useEffect(() => {
+    if (isResult && workflow?.status === 'voting_closed') {
+      // Result pages only render after the workflow is finalized by the status action.
+    }
+  }, [isResult, workflow?.status]);
   const votesA = workflow?.votesA ?? (isResult ? 642 : 418);
   const votesB = workflow?.votesB ?? (isResult ? 538 : 392);
   const total = votesA + votesB;
