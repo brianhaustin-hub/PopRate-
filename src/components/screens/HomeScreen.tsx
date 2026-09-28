@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bell, ChevronRight, Flame, Plus, Search, Share2, Sparkles, Swords, Trophy, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { posts } from '@/data/mock';
 import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challengeMemories';
 import { getUnifiedFeed } from '@/data/content';
+import { getFollowedUsernames, subscribeSocialGraph, useSocialGraphVersion } from '@/data/socialGraph';
+import { subscribePublishedContent } from '@/data/contentCreation';
 import { UnifiedContentCard } from '@/components/content/UnifiedContentCard';
 import { FeedTab } from '@/types';
 
@@ -19,11 +20,18 @@ export function HomeScreen() {
   const [activeTab,setActiveTab]=useState<FeedTab>('forYou');
   const [voted,setVoted]=useState<Record<string,'left'|'right'>>({});
   const [challengeMemories,setChallengeMemories]=useState(getChallengeMemories());
+  const [contentVersion,setContentVersion]=useState(0);
+  useSocialGraphVersion();
 
-  useEffect(() => subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories())), []);
+  useEffect(() => {
+    const unsubMemory = subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories()));
+    const unsubContent = subscribePublishedContent(() => setContentVersion(value => value + 1));
+    const unsubGraph = subscribeSocialGraph(() => setContentVersion(value => value + 1));
+    return () => { unsubMemory(); unsubContent(); unsubGraph(); };
+  }, []);
 
-  const unifiedFeed = useMemo(() => getUnifiedFeed(), [challengeMemories]);
-  const followingUsernames = useMemo(() => new Set(posts.filter(p => p.creator.isFollowing).map(p => p.creator.username)), []);
+  const unifiedFeed = useMemo(() => getUnifiedFeed(), [challengeMemories, contentVersion]);
+  const followingUsernames = useMemo(() => getFollowedUsernames(), [contentVersion]);
 
   const feedItems = useMemo(() => {
     if (activeTab === 'following') {
