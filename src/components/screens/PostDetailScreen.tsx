@@ -7,13 +7,13 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { MediaFrame } from '@/components/ui/MediaFrame';
 import { ArrowLeft, Bookmark, Check, Heart, MessageCircle, MoreHorizontal, Send, Share2, Star, UserPlus } from 'lucide-react';
+import { ratePost, toggleLike, toggleSave, usePostEngagement } from '@/data/postEngagement';
 
 export function PostDetailScreen({ postId }: { postId: string }) {
   const router = useRouter();
   const post = useMemo(() => posts.find((item) => item.id === postId) ?? posts[0], [postId]);
   const postComments = useMemo(() => comments.filter((item) => item.postId === post.id), [post.id]);
-  const [liked, setLiked] = useState(post.isLiked);
-  const [saved, setSaved] = useState(post.isSaved);
+  const engagement = usePostEngagement(post.id);
   const [rating, setRating] = useState<number | null>(null);
   const [following, setFollowing] = useState(post.creator.isFollowing);
   const [comment, setComment] = useState('');
@@ -79,14 +79,14 @@ export function PostDetailScreen({ postId }: { postId: string }) {
 
           <div className="flex items-center justify-between mt-5 py-3 border-y border-white/5">
             <div className="flex items-center gap-5">
-              <button onClick={() => setLiked((value) => !value)} className="flex items-center gap-1.5 text-sm font-semibold text-white/65">
-                <Heart size={19} className={liked ? 'fill-pop-500 text-pop-500' : ''} /> {(post.likes + (liked && !post.isLiked ? 1 : 0)).toLocaleString()}
+              <button onClick={() => toggleLike(post.id)} className="flex items-center gap-1.5 text-sm font-semibold text-white/65">
+                <Heart size={19} className={engagement.liked ? 'fill-pop-500 text-pop-500' : ''} /> {engagement.likes.toLocaleString()}
               </button>
               <span className="flex items-center gap-1.5 text-sm text-white/45"><MessageCircle size={19} /> {post.comments}</span>
               <button onClick={share} className="flex items-center gap-1.5 text-sm text-white/45"><Send size={18} /> Share</button>
             </div>
-            <button onClick={() => setSaved((value) => !value)} className="text-white/55" aria-label="Save">
-              <Bookmark size={20} className={saved ? 'fill-white text-white' : ''} />
+            <button onClick={() => toggleSave(post.id)} className="text-white/55" aria-label="Save">
+              <Bookmark size={20} className={engagement.saved ? 'fill-white text-white' : ''} />
             </button>
           </div>
         </section>
@@ -101,12 +101,12 @@ export function PostDetailScreen({ postId }: { postId: string }) {
           </div>
           <div className="grid grid-cols-5 gap-2 mt-4">
             {[1,2,3,4,5,6,7,8,9,10].map((value) => (
-              <button key={value} onClick={() => setRating(value)} className={rating === value ? 'h-10 rounded-xl bg-pop-500 text-white font-black text-xs' : 'h-10 rounded-xl bg-surface-800 text-white/55 font-bold text-xs hover:bg-surface-700'}>
+              <button key={value} onClick={() => { setRating(value); ratePost(post.id, value); }} className={rating === value ? 'h-10 rounded-xl bg-pop-500 text-white font-black text-xs' : 'h-10 rounded-xl bg-surface-800 text-white/55 font-bold text-xs hover:bg-surface-700'}>
                 {value}
               </button>
             ))}
           </div>
-          {rating && <p className="text-[11px] text-white/35 mt-3">Prototype only — your rating is not saved to a backend yet.</p>}
+          {rating && <p className="text-[11px] text-white/35 mt-3">Your rating is reflected across this prototype session.</p>}
         </section>
 
         <section className="px-4 mt-6">
