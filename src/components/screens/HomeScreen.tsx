@@ -42,10 +42,10 @@ export function HomeScreen() {
           <div className="flex items-center justify-between px-4 py-3"><div className="flex items-center gap-2 text-xs text-white/40"><Users size={14}/> {challenge.votes.toLocaleString()} votes</div>{voted[challenge.id]&&<span className="text-xs font-bold text-pop-300">Vote locked in ✓</span>}</div>
         </article>)}</div></section>}
       {activeTab==='forYou' && challengeMemories.filter((memory) => memory.placement === 'profile_and_feed').map((memory) => (
-        <section key={memory.id} className="overflow-hidden rounded-3xl border border-pop-500/15 bg-gradient-to-br from-pop-500/10 to-transparent">
+        <button type="button" onClick={() => router.push(`/post/${memory.id}`)} className="block w-full text-left overflow-hidden rounded-3xl border border-pop-500/15 bg-gradient-to-br from-pop-500/10 to-transparent">
           <div className="flex items-center justify-between px-4 py-3">
             <div><p className="text-[10px] font-black uppercase tracking-[.16em] text-pop-300">Challenge memory</p><h3 className="mt-1 text-base font-black text-white">{memory.title}</h3></div>
-            <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/45">25h</span>
+            <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-bold text-white/45">{Math.max(1, Math.ceil((new Date(memory.expiresAt).getTime() - Date.now()) / 3600000))}h</span>
           </div>
           <div className="grid grid-cols-2 gap-1 bg-black">
             {[memory.creatorMedia, memory.opponentMedia].map((media, i) => media.type === 'video'
