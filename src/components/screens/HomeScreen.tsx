@@ -8,6 +8,7 @@ import { getUnifiedFeed } from '@/data/content';
 import { getFollowedUsernames, subscribeSocialGraph, useSocialGraphVersion } from '@/data/socialGraph';
 import { subscribePublishedContent } from '@/data/contentCreation';
 import { subscribeBehavior } from '@/data/behaviorStore';
+import { getMomentum, subscribeMomentum } from '@/data/retentionStore';
 import { UnifiedContentCard } from '@/components/content/UnifiedContentCard';
 import { FeedTab } from '@/types';
 
@@ -22,14 +23,16 @@ export function HomeScreen() {
   const [voted,setVoted]=useState<Record<string,'left'|'right'>>({});
   const [challengeMemories,setChallengeMemories]=useState(getChallengeMemories());
   const [contentVersion,setContentVersion]=useState(0);
+  const [momentum,setMomentum]=useState(getMomentum());
   useSocialGraphVersion();
 
   useEffect(() => {
     const unsubMemory = subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories()));
     const unsubContent = subscribePublishedContent(() => setContentVersion(value => value + 1));
     const unsubGraph = subscribeSocialGraph(() => setContentVersion(value => value + 1));
-    const unsubBehavior = subscribeBehavior(() => setContentVersion(value => value + 1));
-    return () => { unsubMemory(); unsubContent(); unsubGraph(); unsubBehavior(); };
+    const unsubBehavior = subscribeBehavior(() => { setContentVersion(value => value + 1); setMomentum(getMomentum()); });
+    const unsubMomentum = subscribeMomentum(() => setMomentum(getMomentum()));
+    return () => { unsubMemory(); unsubContent(); unsubGraph(); unsubBehavior(); unsubMomentum(); };
   }, []);
 
   const unifiedFeed = useMemo(() => getUnifiedFeed(), [challengeMemories, contentVersion]);
@@ -57,6 +60,13 @@ export function HomeScreen() {
       <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-pop-500/20 via-neon-500/10 to-transparent p-5">
         <div className="relative"><div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-pop-300"><Flame size={14}/> Today's arena</div><h2 className="max-w-[280px] text-2xl font-black leading-tight text-white">Two sides. One question. The crowd decides.</h2><p className="mt-2 max-w-[300px] text-sm leading-5 text-white/55">Vote on live challenges or create one and invite someone to face you.</p><button onClick={()=>router.push('/create')} className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-black text-black"><Plus size={17}/> Create a Challenge</button></div>
       </section>
+
+      {activeTab === 'forYou' && <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-4">
+        <div className="flex items-center justify-between">
+          <div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-pop-300">Your momentum</p><p className="mt-1 text-sm font-black text-white">{momentum.streak > 1 ? momentum.streak + ' day streak' : 'Start your streak'}</p><p className="mt-1 text-[11px] text-white/40">{momentum.todayActions} meaningful actions today · every rate, save, comment and challenge helps tune your feed.</p></div>
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-pop-500/15 text-lg font-black text-pop-300">{momentum.streak}</div>
+        </div>
+      </section>}
 
       {activeTab !== 'following' && <section><div className="mb-3 flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Live now</p><h2 className="text-lg font-black text-white">Make your call</h2></div><button onClick={()=>router.push('/challenges')} className="flex items-center gap-1 text-xs font-bold text-pop-400">See all <ChevronRight size={14}/></button></div>
         <div className="space-y-4">{challengeSamples.map(challenge=><article key={challenge.id} className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
