@@ -19,7 +19,9 @@ export function MediaFrame({
   muted = true,
   playsInline = true,
   active = true,
+  onProgress,
 }: {
+
   media: MediaSource;
   alt?: string;
   className?: string;
@@ -30,6 +32,7 @@ export function MediaFrame({
   muted?: boolean;
   playsInline?: boolean;
   active?: boolean;
+  onProgress?: (currentTime: number, duration: number) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(autoPlay);
@@ -83,6 +86,7 @@ export function MediaFrame({
         playsInline={playsInline}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
+        onTimeUpdate={(event) => onProgress?.(event.currentTarget.currentTime, event.currentTarget.duration)}
         className={`h-full w-full object-cover ${videoClassName}`}
       />
       {!controls && (
