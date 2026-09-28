@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { users, posts, categories, trendingTags } from '@/data/mock';
+import { getUnifiedFeed } from '@/data/content';
+import { subscribePublishedContent } from '@/data/contentCreation';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Search, User, Image, Hash, Palette, ArrowUpRight, SlidersHorizontal } from 'lucide-react';
@@ -12,6 +14,8 @@ export function SearchScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<SearchTab>('people');
+  const [version, setVersion] = useState(0);
+  useEffect(() => subscribePublishedContent(() => setVersion(value => value + 1)), []);
 
   const tabs = [
     { id: 'people' as SearchTab, icon: User, label: 'People' },
@@ -40,11 +44,12 @@ export function SearchScreen() {
         u.bio.toLowerCase().includes(normalized)
       );
 
-    const postResults = posts.filter((post) =>
+    const postResults = getUnifiedFeed().filter((post) =>
       !normalized ||
       post.caption.toLowerCase().includes(normalized) ||
       post.category.toLowerCase().includes(normalized) ||
-      post.tags.some((tag) => tag.toLowerCase().includes(normalized))
+      post.creator.username.toLowerCase().includes(normalized) ||
+      post.creator.name.toLowerCase().includes(normalized)
     );
 
     const categoryResults = categories.filter((category) =>
@@ -56,7 +61,7 @@ export function SearchScreen() {
     );
 
     return { people, creators, posts: postResults, categories: categoryResults, hashtags: hashtagResults };
-  }, [normalized]);
+  }, [normalized, version]);
 
   const activeResults = results[activeTab];
 
