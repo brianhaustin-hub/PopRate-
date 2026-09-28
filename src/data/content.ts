@@ -1,5 +1,5 @@
 import { posts } from '@/data/mock';
-import { getChallengeMemories, type ChallengeMemory } from '@/data/challengeMemories';
+import { expireChallengeMemories, getChallengeMemories, type ChallengeMemory } from '@/data/challengeMemories';
 import type { Post } from '@/types';
 import { getFollowedUserIds } from '@/data/socialGraph';
 import { getCreatorAffinity, getInterestScore, getRecentContentIds } from '@/data/behaviorStore';
@@ -103,6 +103,7 @@ export function getUnifiedContent(id: string): UnifiedContent | null {
 }
 
 export function getUnifiedFeed(): UnifiedContent[] {
+  expireChallengeMemories();
   const normalPosts = posts.map(postToContent);
   const memories = getChallengeMemories()
     .filter((memory) => memory.placement === 'profile_and_feed')
@@ -151,6 +152,7 @@ export function getUnifiedFeed(): UnifiedContent[] {
 }
 
 export function getUnifiedProfileContent(): UnifiedContent[] {
+  expireChallengeMemories();
   const normalPosts = posts.map(postToContent);
   const memories = getChallengeMemories().map(memoryToContent);
 
