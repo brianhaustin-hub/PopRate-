@@ -17,7 +17,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { Notification } from '@/types';
-import { getActivity, subscribeActivity } from '@/data/activityStore';
+import { getActivity, subscribeActivity, markActivityRead, markAllActivityRead } from '@/data/activityStore';
 import { useRouter } from 'next/navigation';
 
 type ActivityFilter = 'all' | 'likes' | 'comments' | 'follows' | 'ratings' | 'challenges';
@@ -67,13 +67,13 @@ export function ActivityScreen() {
   );
 
   const markAllRead = () => {
-    setItems((current) => current.map((item) => ({ ...item, read: true })));
+    markAllActivityRead();
+    setItems(getActivity());
   };
 
   const markRead = (id: string) => {
-    setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, read: true } : item)),
-    );
+    markActivityRead(id);
+    setItems(getActivity());
   };
 
   return (
