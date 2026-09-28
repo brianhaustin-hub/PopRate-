@@ -27,10 +27,11 @@ export function HomeScreen() {
   useSocialGraphVersion();
 
   useEffect(() => {
+    const onChange = () => setContentVersion(value => value + 1);
     const unsubMemory = subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories()));
-    const unsubContent = subscribePublishedContent(() => setContentVersion(value => value + 1));
-    const unsubGraph = subscribeSocialGraph(() => setContentVersion(value => value + 1));
-    const unsubBehavior = subscribeBehavior(() => { setContentVersion(value => value + 1); setMomentum(getMomentum()); });
+    const unsubContent = subscribePublishedContent(onChange);
+    const unsubGraph = subscribeSocialGraph(onChange);
+    const unsubBehavior = subscribeBehavior(() => { onChange(); setMomentum(getMomentum()); });
     const unsubMomentum = subscribeMomentum(() => setMomentum(getMomentum()));
     return () => { unsubMemory(); unsubContent(); unsubGraph(); unsubBehavior(); unsubMomentum(); };
   }, []);
@@ -39,11 +40,11 @@ export function HomeScreen() {
   const followingUsernames = useMemo(() => getFollowedUsernames(), [contentVersion]);
 
   const feedItems = useMemo(() => {
-    if (activeTab === 'following') {
-      return unifiedFeed.filter(content => followingUsernames.has(content.creator.username));
-    }
+    if (activeTab === 'following') return unifiedFeed.filter(content => followingUsernames.has(content.creator.username));
     return unifiedFeed;
   }, [activeTab, unifiedFeed, followingUsernames]);
+
+  const personalized = activeTab === 'forYou' && unifiedFeed.length > 0;
 
   return <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,#21102b_0,#09090b_38%)] pb-24">
     <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-black/60 px-4 pb-3 pt-4 backdrop-blur-2xl">
@@ -68,6 +69,12 @@ export function HomeScreen() {
         </div>
       </section>}
 
+      {activeTab === 'forYou' && personalized && <section className="rounded-3xl border border-pop-500/15 bg-pop-500/[0.04] p-4">
+        <div className="flex items-center gap-2"><Sparkles size={16} className="text-pop-300"/><p className="text-[10px] font-black uppercase tracking-[0.18em] text-pop-300">Personalized for you</p></div>
+        <p className="mt-2 text-sm font-bold text-white">Your feed adapts to what you watch, rate, save, share and follow.</p>
+        <p className="mt-1 text-[11px] leading-4 text-white/40">Fresh content is mixed with familiar creators and interests so your feed can evolve as you use PopRate.</p>
+      </section>}
+
       {activeTab !== 'following' && <section><div className="mb-3 flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">Live now</p><h2 className="text-lg font-black text-white">Make your call</h2></div><button onClick={()=>router.push('/challenges')} className="flex items-center gap-1 text-xs font-bold text-pop-400">See all <ChevronRight size={14}/></button></div>
         <div className="space-y-4">{challengeSamples.map(challenge=><article key={challenge.id} className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035]">
           <div className="flex items-center justify-between px-4 py-3"><div className="flex items-center gap-2"><span className="rounded-full bg-pop-500/15 px-2.5 py-1 text-[10px] font-bold text-pop-300">{challenge.category}</span><span className="text-[10px] text-white/35">ends in {challenge.ends}</span></div><button className="text-white/35"><Share2 size={16}/></button></div>
@@ -86,11 +93,7 @@ export function HomeScreen() {
       ) : (
         <section>
           <div className="mb-3 flex items-center justify-between"><div><p className="text-[11px] font-bold uppercase tracking-[0.18em] text-white/35">{activeTab === 'following' ? 'Following' : 'Your feed'}</p><h2 className="text-lg font-black text-white">{activeTab === 'following' ? 'From people you follow' : 'More from PopRate'}</h2></div><Trophy size={18} className="text-neon-400"/></div>
-          {feedItems.length ? (
-            <div className="space-y-5">{feedItems.slice(0, 5).map(content => <UnifiedContentCard key={content.id} content={content} />)}</div>
-          ) : (
-            <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.025] p-8 text-center"><p className="text-sm font-bold text-white">Your following feed is quiet.</p><p className="mt-1 text-xs text-white/40">Discover creators and follow people to fill this space.</p><button onClick={()=>router.push('/discover')} className="mt-4 rounded-2xl bg-white px-4 py-2.5 text-xs font-black text-black">Discover creators</button></div>
-          )}
+          {feedItems.length ? <div className="space-y-5">{feedItems.slice(0, 5).map(content => <UnifiedContentCard key={content.id} content={content}/>)}</div> : <div className="rounded-3xl border border-dashed border-white/10 bg-white/[0.025] p-8 text-center"><p className="text-sm font-bold text-white">Your following feed is quiet.</p><p className="mt-1 text-xs text-white/40">Discover creators and follow people to fill this space.</p><button onClick={()=>router.push('/discover')} className="mt-4 rounded-2xl bg-white px-4 py-2.5 text-xs font-black text-black">Discover creators</button></div>}
         </section>
       )}
     </main>
