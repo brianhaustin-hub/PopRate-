@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { ProfileTab } from '@/types';
 import { getChallengeMemories, subscribeChallengeMemories } from '@/data/challengeMemories';
+import { getUnifiedFeed } from '@/data/content';
 
 const user = users[0];
 
@@ -30,6 +31,7 @@ export function ProfileScreen() {
   const [challengeMemories, setChallengeMemories] = useState(getChallengeMemories());
 
   useEffect(() => subscribeChallengeMemories(() => setChallengeMemories(getChallengeMemories())), []);
+  const unifiedFeed = getUnifiedFeed();
 
   const copyProfile = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
